@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, User } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 // Types
 type AnswerOption = { text: string; traits: string[] };
@@ -201,10 +203,25 @@ const Index = () => {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [hangoutMsg, setHangoutMsg] = useState("");
   const [hangoutCount, setHangoutCount] = useState(3);
+const [profiles, setProfiles] = useState<any[]>([]);
+const [loadingProfiles, setLoadingProfiles] = useState(false);
 
-  const totalQ = personalityQuestions.length;
-  const progress = Math.round(((currentQ + 1) / totalQ) * 100);
+useEffect(() => {
+  (async () => {
+    setLoadingProfiles(true);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, display_name, bio, avatar_url, verified, reputation_score, rating_count')
+      .order('verified', { ascending: false })
+      .order('reputation_score', { ascending: false })
+      .limit(20);
+    if (!error) setProfiles(data ?? []);
+    setLoadingProfiles(false);
+  })();
+}, []);
 
+const totalQ = personalityQuestions.length;
+const progress = Math.round(((currentQ + 1) / totalQ) * 100);
   const sortedPeople = useMemo(() => {
     return [...mockPeople].sort((a, b) => b.compatibility - a.compatibility);
   }, []);
@@ -367,41 +384,80 @@ const Index = () => {
             </section>
 
             <section className="space-y-4">
-              {sortedPeople.map((person) => (
-                <Card key={person.name} className="card-hover">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground grid place-items-center text-xl font-bold">
-                          {person.avatar}
+              {profiles.length > 0 ? (
+                profiles.map((p) => (
+                  <Card key={p.id} className="card-hover">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-4">
+                          {p.avatar_url ? (
+                            <img src={p.avatar_url} alt={`${p.display_name || 'User'} avatar`} className="w-16 h-16 rounded-full object-cover" loading="lazy" />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground grid place-items-center text-xl font-bold">
+                              {(p.display_name || 'U').charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="text-xl font-semibold inline-flex items-center gap-2">
+                              {p.display_name || 'Anonymous'}
+                              {p.verified && <Badge variant="secondary" className="rounded-full">Verified</Badge>}
+                            </h3>
+                            <p className="text-muted-foreground inline-flex items-center gap-1">
+                              <MapPin className="h-4 w-4" /> Nearby
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-xl font-semibold">{person.name}, {person.age}</h3>
-                          <p className="text-muted-foreground inline-flex items-center gap-1">
-                            <MapPin className="h-4 w-4" /> {person.distance} away
-                          </p>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary">{(p.reputation_score ?? 0).toFixed(1)}</div>
+                          <div className="text-sm text-muted-foreground">reputation · {p.rating_count ?? 0} ratings</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">{Math.round(person.compatibility)}%</div>
-                        <div className="text-sm text-muted-foreground">match</div>
+
+                      {p.bio && <p className="text-muted-foreground mb-4">{p.bio}</p>}
+
+                      <Button variant="hero" className="w-full">
+                        👋 Say hi
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                sortedPeople.map((person) => (
+                  <Card key={person.name} className="card-hover">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground grid place-items-center text-xl font-bold">
+                            {person.avatar}
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-semibold">{person.name}, {person.age}</h3>
+                            <p className="text-muted-foreground inline-flex items-center gap-1">
+                              <MapPin className="h-4 w-4" /> {person.distance} away
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary">{Math.round(person.compatibility)}%</div>
+                          <div className="text-sm text-muted-foreground">match</div>
+                        </div>
                       </div>
-                    </div>
 
-                    <p className="text-muted-foreground mb-4">{person.bio}</p>
+                      <p className="text-muted-foreground mb-4">{person.bio}</p>
 
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {person.interests.map((interest, i) => (
-                        <Badge key={i} variant="secondary" className="rounded-full">{interest}</Badge>
-                      ))}
-                    </div>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {person.interests.map((interest, i) => (
+                          <Badge key={i} variant="secondary" className="rounded-full">{interest}</Badge>
+                        ))}
+                      </div>
 
-                    <Button variant="hero" className="w-full" onClick={() => openHangout(person)}>
-                      💬 Ask to Hangout
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                      <Button variant="hero" className="w-full" onClick={() => openHangout(person)}>
+                        💬 Ask to Hangout
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </section>
           </main>
         </div>
