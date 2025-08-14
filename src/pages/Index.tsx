@@ -352,9 +352,14 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
                     <MapPin className="h-4 w-4" /> San Francisco
                   </span>
                 </div>
-                <Button variant="secondary" size="icon" onClick={() => setProfileOpen(true)} aria-label="Open profile">
-                  <User className="h-5 w-5" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Link to="/nearby">
+                    <Button variant="secondary">Nearby</Button>
+                  </Link>
+                  <Button variant="secondary" size="icon" onClick={() => setProfileOpen(true)} aria-label="Open profile">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
             </div>
           </header>
