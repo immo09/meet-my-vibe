@@ -464,6 +464,17 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
                 ))
               )}
             </section>
+            
+            <footer className="mt-12 pt-8 border-t border-border text-center">
+              <div className="flex justify-center gap-6 text-sm text-muted-foreground">
+                <Link to="/privacy" className="hover:text-foreground transition-colors">
+                  Privacy Policy
+                </Link>
+                <Link to="/terms" className="hover:text-foreground transition-colors">
+                  Terms of Service
+                </Link>
+              </div>
+            </footer>
           </main>
         </div>
       )}
