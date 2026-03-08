@@ -119,7 +119,7 @@ const Auth: React.FC = () => {
           </CardContent>
         </Card>
 
-        <p className="text-xs text-muted-foreground mt-4 text-center">Tip: Ensure Site URL and Redirect URLs are configured in Supabase Auth settings.</p>
+        <p className="text-xs text-muted-foreground mt-4 text-center">Sign in securely with email or Google.</p>
       </div>
     </main>
   );
