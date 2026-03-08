@@ -14,6 +14,91 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversation_members: {
+        Row: {
+          conversation_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string | null
+          type: Database["public"]["Enums"]["conversation_type"]
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name?: string | null
+          type?: Database["public"]["Enums"]["conversation_type"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string | null
+          type?: Database["public"]["Enums"]["conversation_type"]
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           content: string | null
@@ -215,6 +300,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_conversation_member: {
+        Args: { _conversation_id: string; _user_id: string }
+        Returns: boolean
+      }
       recalc_profile_reputation: {
         Args: { target_user: string }
         Returns: undefined
@@ -222,6 +311,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      conversation_type: "direct" | "group"
       report_category: "ghosting" | "rude" | "abuse" | "spam" | "other"
       verification_method: "id" | "selfie" | "social"
       verification_status: "pending" | "approved" | "rejected"
@@ -353,6 +443,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      conversation_type: ["direct", "group"],
       report_category: ["ghosting", "rude", "abuse", "spam", "other"],
       verification_method: ["id", "selfie", "social"],
       verification_status: ["pending", "approved", "rejected"],
