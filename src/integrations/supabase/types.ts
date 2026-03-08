@@ -10,221 +10,20 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
-      posts: {
-        Row: {
-          content: string | null
-          created_at: string
-          id: string
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          content?: string | null
-          created_at?: string
-          id?: string
-          title: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          content?: string | null
-          created_at?: string
-          id?: string
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          bio: string | null
-          created_at: string
-          display_name: string | null
-          ghosting_strikes: number
-          id: string
-          last_seen_at: string | null
-          lat: number | null
-          lng: number | null
-          rating_count: number
-          reputation_score: number
-          updated_at: string
-          username: string | null
-          verified: boolean
-        }
-        Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
-          display_name?: string | null
-          ghosting_strikes?: number
-          id: string
-          last_seen_at?: string | null
-          lat?: number | null
-          lng?: number | null
-          rating_count?: number
-          reputation_score?: number
-          updated_at?: string
-          username?: string | null
-          verified?: boolean
-        }
-        Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string
-          display_name?: string | null
-          ghosting_strikes?: number
-          id?: string
-          last_seen_at?: string | null
-          lat?: number | null
-          lng?: number | null
-          rating_count?: number
-          reputation_score?: number
-          updated_at?: string
-          username?: string | null
-          verified?: boolean
-        }
-        Relationships: []
-      }
-      ratings: {
-        Row: {
-          comment: string | null
-          created_at: string
-          id: string
-          ratee_id: string
-          rater_id: string
-          score: number
-        }
-        Insert: {
-          comment?: string | null
-          created_at?: string
-          id?: string
-          ratee_id: string
-          rater_id: string
-          score: number
-        }
-        Update: {
-          comment?: string | null
-          created_at?: string
-          id?: string
-          ratee_id?: string
-          rater_id?: string
-          score?: number
-        }
-        Relationships: []
-      }
-      user_reports: {
-        Row: {
-          category: Database["public"]["Enums"]["report_category"]
-          created_at: string
-          id: string
-          notes: string | null
-          reported_id: string
-          reporter_id: string
-        }
-        Insert: {
-          category: Database["public"]["Enums"]["report_category"]
-          created_at?: string
-          id?: string
-          notes?: string | null
-          reported_id: string
-          reporter_id: string
-        }
-        Update: {
-          category?: Database["public"]["Enums"]["report_category"]
-          created_at?: string
-          id?: string
-          notes?: string | null
-          reported_id?: string
-          reporter_id?: string
-        }
-        Relationships: []
-      }
-      user_roles: {
-        Row: {
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-      verification_requests: {
-        Row: {
-          document_url: string | null
-          id: string
-          method: Database["public"]["Enums"]["verification_method"]
-          notes: string | null
-          reviewed_at: string | null
-          reviewer_id: string | null
-          selfie_url: string | null
-          status: Database["public"]["Enums"]["verification_status"]
-          submitted_at: string
-          user_id: string
-        }
-        Insert: {
-          document_url?: string | null
-          id?: string
-          method: Database["public"]["Enums"]["verification_method"]
-          notes?: string | null
-          reviewed_at?: string | null
-          reviewer_id?: string | null
-          selfie_url?: string | null
-          status?: Database["public"]["Enums"]["verification_status"]
-          submitted_at?: string
-          user_id: string
-        }
-        Update: {
-          document_url?: string | null
-          id?: string
-          method?: Database["public"]["Enums"]["verification_method"]
-          notes?: string | null
-          reviewed_at?: string | null
-          reviewer_id?: string | null
-          selfie_url?: string | null
-          status?: Database["public"]["Enums"]["verification_status"]
-          submitted_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      recalc_profile_reputation: {
-        Args: { target_user: string }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
-      report_category: "ghosting" | "rude" | "abuse" | "spam" | "other"
-      verification_method: "id" | "selfie" | "social"
-      verification_status: "pending" | "approved" | "rejected"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -351,11 +150,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "moderator", "user"],
-      report_category: ["ghosting", "rude", "abuse", "spam", "other"],
-      verification_method: ["id", "selfie", "social"],
-      verification_status: ["pending", "approved", "rejected"],
-    },
+    Enums: {},
   },
 } as const
