@@ -15,6 +15,7 @@ import { MapPin, User } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import RateUserDialog from "@/components/RateUserDialog";
 
 // Types
 type AnswerOption = { text: string; traits: string[] };
@@ -203,6 +204,7 @@ const Index = () => {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [hangoutMsg, setHangoutMsg] = useState("");
   const [hangoutCount, setHangoutCount] = useState(3);
+  const [rateTarget, setRateTarget] = useState<{ id: string; name: string } | null>(null);
 const [profiles, setProfiles] = useState<any[]>([]);
 const [loadingProfiles, setLoadingProfiles] = useState(false);
 
@@ -420,9 +422,18 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
 
                       {p.bio && <p className="text-muted-foreground mb-4">{p.bio}</p>}
 
-                      <Button variant="hero" className="w-full">
-                        👋 Say hi
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="hero" className="flex-1">
+                          👋 Say hi
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => setRateTarget({ id: p.id, name: p.display_name || "Anonymous" })}
+                        >
+                          ⭐ Rate
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))
