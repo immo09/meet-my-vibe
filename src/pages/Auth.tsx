@@ -111,6 +111,11 @@ const Auth: React.FC = () => {
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>{loading ? "Please wait..." : (mode === "signup" ? "Create account" : "Sign in")}</Button>
+              {mode === "login" && (
+                <p className="text-center text-sm">
+                  <a href="/forgot-password" className="text-primary underline">Forgot password?</a>
+                </p>
+              )}
             </form>
 
             <div className="my-6"><Separator /></div>
