@@ -566,6 +566,24 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
           </div>
         </DialogContent>
       </Dialog>
+
+      <RateUserDialog
+        open={!!rateTarget}
+        onOpenChange={(open) => { if (!open) setRateTarget(null); }}
+        rateeId={rateTarget?.id ?? ""}
+        rateeName={rateTarget?.name ?? ""}
+        onRated={() => {
+          (async () => {
+            const { data } = await supabase
+              .from("profiles")
+              .select("id, display_name, bio, avatar_url, verified, reputation_score, rating_count")
+              .order("verified", { ascending: false })
+              .order("reputation_score", { ascending: false })
+              .limit(20);
+            if (data) setProfiles(data);
+          })();
+        }}
+      />
     </>
   );
 };
