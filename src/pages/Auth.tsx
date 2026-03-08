@@ -59,9 +59,11 @@ const Auth: React.FC = () => {
     }
   };
 
-  const signInWithProvider = async (provider: "google" | "github" | "twitter") => {
+  const signInWithGoogle = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: emailRedirectTo } });
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
       if (error) throw error;
     } catch (err: any) {
       toast({ title: "OAuth error", description: err.message, variant: "destructive" });
@@ -112,9 +114,7 @@ const Auth: React.FC = () => {
 
             <div className="my-6"><Separator /></div>
             <div className="space-y-2">
-              <Button className="w-full" variant="outline" onClick={() => signInWithProvider("google")}>Continue with Google</Button>
-              <Button className="w-full" variant="outline" onClick={() => signInWithProvider("github")}>Continue with GitHub</Button>
-              <Button className="w-full" variant="outline" onClick={() => signInWithProvider("twitter")}>Continue with Twitter</Button>
+              <Button className="w-full" variant="outline" onClick={signInWithGoogle}>Continue with Google</Button>
             </div>
           </CardContent>
         </Card>
