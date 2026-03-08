@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistance, haversineDistanceKm } from "@/lib/geo";
 import LocationShare from "@/components/location/LocationShare";
+import RateUserDialog from "@/components/RateUserDialog";
 
 interface Profile {
   id: string;
@@ -24,6 +25,7 @@ const Nearby: React.FC = () => {
   const [currentPos, setCurrentPos] = useState<GeolocationPosition | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [rateTarget, setRateTarget] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -137,7 +139,16 @@ const Nearby: React.FC = () => {
                     <div className="font-medium">{p.distanceKm == null ? '—' : formatDistance(p.distanceKm)}</div>
                   </div>
                 </div>
-                <Button variant="hero" className="w-full">👋 Say hi</Button>
+                <div className="flex gap-2">
+                  <Button variant="hero" className="flex-1">👋 Say hi</Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setRateTarget({ id: p.id, name: p.display_name || "Anonymous" })}
+                  >
+                    ⭐ Rate
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -147,6 +158,25 @@ const Nearby: React.FC = () => {
           )}
         </section>
       </div>
+
+      <RateUserDialog
+        open={!!rateTarget}
+        onOpenChange={(open) => { if (!open) setRateTarget(null); }}
+        rateeId={rateTarget?.id ?? ""}
+        rateeName={rateTarget?.name ?? ""}
+        onRated={() => {
+          // Refresh profiles to show updated reputation
+          (async () => {
+            const { data } = await supabase
+              .from("profiles")
+              .select("id, display_name, avatar_url, verified, reputation_score, rating_count, lat, lng")
+              .not("lat", "is", null)
+              .not("lng", "is", null)
+              .limit(100);
+            if (data) setProfiles(data as any);
+          })();
+        }}
+      />
     </main>
   );
 };
