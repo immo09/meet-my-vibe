@@ -13,6 +13,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Profile from "./pages/Profile";
 import RequireAuth from "./components/auth/RequireAuth";
 
 
@@ -34,6 +35,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
               <Route path="/nearby" element={<RequireAuth><Nearby /></RequireAuth>} />
+              <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Users, LogOut } from "lucide-react";
+import { Home, Users, User, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -25,6 +25,7 @@ const AppNavigation: React.FC = () => {
   const navItems = [
     { path: "/", label: "Home", icon: Home },
     { path: "/nearby", label: "Nearby", icon: Users },
+    { path: "/profile", label: "Profile", icon: User },
   ];
 
   return (
