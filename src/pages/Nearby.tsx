@@ -10,6 +10,7 @@ import LocationShare from "@/components/location/LocationShare";
 import RateUserDialog from "@/components/RateUserDialog";
 import { useStartDm } from "@/hooks/use-start-dm";
 import AppNavigation from "@/components/AppNavigation";
+import PresenceIndicator from "@/components/PresenceIndicator";
 
 interface Profile {
   id: string;
