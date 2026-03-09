@@ -355,32 +355,62 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
           ));
 
           return (
-            <div key={msg.id} className={cn("group flex flex-col", mine ? "items-end" : "items-start")}>
-              <div
-                className={cn(
-                  "max-w-[75%] rounded-2xl px-4 py-2",
-                  mine
-                    ? "bg-primary text-primary-foreground rounded-br-md"
-                    : "bg-muted text-foreground rounded-bl-md"
+            <div
+              id={`msg-${msg.id}`}
+              key={msg.id}
+              className={cn(
+                "group flex flex-col transition-all rounded-xl",
+                mine ? "items-end" : "items-start"
+              )}
+            >
+              <div className="flex items-end gap-1.5">
+                {/* Reply button – shown on hover for non-mine messages on left */}
+                {!mine && (
+                  <button
+                    onClick={() => setReplyingTo(msg)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-muted text-muted-foreground"
+                    aria-label="Reply"
+                  >
+                    <Reply className="h-3.5 w-3.5" />
+                  </button>
                 )}
-              >
-                {msg.content && (
-                  <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
-                )}
-                {renderAttachment(msg)}
-                <div className={cn("flex items-center gap-1 mt-1", mine ? "justify-end" : "")}>
-                  <span className={cn("text-[10px]", mine ? "text-primary-foreground/60" : "text-muted-foreground")}>
-                    {format(new Date(msg.created_at), "HH:mm")}
-                  </span>
-                  {mine && (
-                    isRead
-                      ? <CheckCheck className="h-3 w-3 text-primary-foreground/80" />
-                      : <Check className="h-3 w-3 text-primary-foreground/40" />
+                <div
+                  className={cn(
+                    "max-w-[75%] rounded-2xl px-4 py-2",
+                    mine
+                      ? "bg-primary text-primary-foreground rounded-br-md"
+                      : "bg-muted text-foreground rounded-bl-md"
                   )}
+                >
+                  {renderQuotedMessage(msg)}
+                  {msg.content && (
+                    <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                  )}
+                  {renderAttachment(msg)}
+                  <div className={cn("flex items-center gap-1 mt-1", mine ? "justify-end" : "")}>
+                    <span className={cn("text-[10px]", mine ? "text-primary-foreground/60" : "text-muted-foreground")}>
+                      {format(new Date(msg.created_at), "HH:mm")}
+                    </span>
+                    {mine && (
+                      isRead
+                        ? <CheckCheck className="h-3 w-3 text-primary-foreground/80" />
+                        : <Check className="h-3 w-3 text-primary-foreground/40" />
+                    )}
+                  </div>
                 </div>
+                {/* Reply button for own messages on right */}
+                {mine && (
+                  <button
+                    onClick={() => setReplyingTo(msg)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-muted text-muted-foreground"
+                    aria-label="Reply"
+                  >
+                    <Reply className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
               {showReadReceipt && (
-                <span className="text-[10px] text-muted-foreground mt-0.5 mr-1">Read</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5 mx-8">Read</span>
               )}
               <MessageReactions messageId={msg.id} userId={userId} mine={mine} />
             </div>
