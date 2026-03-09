@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,10 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMsg, setNewMsg] = useState("");
   const [sending, setSending] = useState(false);
+  const [othersTyping, setOthersTyping] = useState<Set<string>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Fetch existing messages
   useEffect(() => {
@@ -35,7 +38,6 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
         .limit(200);
       if (data) setMessages(data);
 
-      // Mark conversation as read
       await supabase
         .from("conversation_members")
         .update({ last_read_at: new Date().toISOString() })
@@ -44,7 +46,7 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     })();
   }, [conversationId, userId]);
 
-  // Subscribe to realtime
+  // Subscribe to realtime messages
   useEffect(() => {
     const channel = supabase
       .channel(`messages:${conversationId}`)
@@ -63,7 +65,13 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
             return [...prev, msg];
           });
 
-          // Mark as read when new message arrives (user is viewing conversation)
+          // Clear typing for this sender
+          setOthersTyping((prev) => {
+            const next = new Set(prev);
+            next.delete(msg.sender_id);
+            return next;
+          });
+
           supabase
             .from("conversation_members")
             .update({ last_read_at: new Date().toISOString() })
@@ -79,10 +87,53 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     };
   }, [conversationId, userId]);
 
+  // Typing indicator channel (broadcast, no DB)
+  useEffect(() => {
+    const channel = supabase
+      .channel(`typing:${conversationId}`)
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        if (payload.user_id === userId) return;
+        setOthersTyping((prev) => new Set(prev).add(payload.user_id));
+
+        // Auto-clear after 3s of no typing signal
+        setTimeout(() => {
+          setOthersTyping((prev) => {
+            const next = new Set(prev);
+            next.delete(payload.user_id);
+            return next;
+          });
+        }, 3000);
+      })
+      .subscribe();
+
+    typingChannelRef.current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+      typingChannelRef.current = null;
+    };
+  }, [conversationId, userId]);
+
+  // Broadcast typing
+  const broadcastTyping = useCallback(() => {
+    typingChannelRef.current?.send({
+      type: "broadcast",
+      event: "typing",
+      payload: { user_id: userId },
+    });
+  }, [userId]);
+
   // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, othersTyping]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMsg(e.target.value);
+    broadcastTyping();
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {}, 2000);
+  };
 
   const handleSend = async () => {
     const text = newMsg.trim();
@@ -130,6 +181,21 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
             </div>
           );
         })}
+
+        {/* Typing indicator */}
+        {othersTyping.size > 0 && (
+          <div className="flex justify-start">
+            <div className="bg-muted text-muted-foreground rounded-2xl rounded-bl-md px-4 py-2 flex items-center gap-1">
+              <span className="flex gap-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:300ms]" />
+              </span>
+              <span className="text-xs ml-1">typing…</span>
+            </div>
+          </div>
+        )}
+
         <div ref={bottomRef} />
       </div>
 
@@ -137,7 +203,7 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
       <div className="border-t p-3 flex gap-2">
         <Input
           value={newMsg}
-          onChange={(e) => setNewMsg(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Type a message…"
           className="flex-1"
