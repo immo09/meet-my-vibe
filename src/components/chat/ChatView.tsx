@@ -113,6 +113,53 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     };
   }, [conversationId, userId]);
 
+  // Fetch members' last_read_at for read receipts
+  useEffect(() => {
+    const fetchMembers = async () => {
+      const { data } = await supabase
+        .from("conversation_members")
+        .select("user_id, last_read_at")
+        .eq("conversation_id", conversationId)
+        .neq("user_id", userId);
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((m) => {
+          if (m.last_read_at) map[m.user_id] = m.last_read_at;
+        });
+        setMembersLastRead(map);
+      }
+    };
+    fetchMembers();
+
+    // Subscribe to conversation_members changes for read receipt updates
+    const channel = supabase
+      .channel(`read-receipts:${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "conversation_members",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updated = payload.new as { user_id: string; last_read_at: string | null };
+          if (updated.user_id === userId) return;
+          if (updated.last_read_at) {
+            setMembersLastRead((prev) => ({
+              ...prev,
+              [updated.user_id]: updated.last_read_at!,
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, userId]);
+
   // Typing indicator channel
   useEffect(() => {
     const channel = supabase
