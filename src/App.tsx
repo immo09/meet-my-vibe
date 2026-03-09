@@ -36,21 +36,23 @@ const App = () => (
               v7_relativeSplatPath: true,
             }}
           >
-            <Routes>
-              <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
-              <Route path="/nearby" element={<RequireAuth><Nearby /></RequireAuth>} />
-              <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-              <Route path="/chat" element={<RequireAuth><Chat /></RequireAuth>} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<TermsOfService />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <PushNotificationPrompt />
-            <InAppNotificationListener />
+            <PresenceProvider>
+              <Routes>
+                <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
+                <Route path="/nearby" element={<RequireAuth><Nearby /></RequireAuth>} />
+                <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+                <Route path="/chat" element={<RequireAuth><Chat /></RequireAuth>} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <PushNotificationPrompt />
+              <InAppNotificationListener />
+            </PresenceProvider>
           </BrowserRouter>
         </TooltipProvider>
       </HelmetProvider>
