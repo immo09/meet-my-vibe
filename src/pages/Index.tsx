@@ -490,6 +490,7 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
               </div>
             </footer>
           </main>
+          <AppNavigation />
         </div>
       )}
 
