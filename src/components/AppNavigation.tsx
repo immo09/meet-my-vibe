@@ -1,13 +1,23 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Home, Users, User, MessageCircle, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useUnreadCount } from "@/hooks/use-unread-count";
 
 const AppNavigation: React.FC = () => {
   const location = useLocation();
   const { toast } = useToast();
+  const [userId, setUserId] = useState<string | null>(null);
+  const unreadCount = useUnreadCount(userId);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -40,9 +50,17 @@ const AppNavigation: React.FC = () => {
             asChild
             className="flex-1 mx-1"
           >
-            <Link to={path} className="flex items-center gap-2">
+            <Link to={path} className="flex items-center gap-2 relative">
               <Icon size={16} />
               <span className="hidden sm:inline">{label}</span>
+              {path === "/chat" && unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center rounded-full px-1 text-xs"
+                >
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </Badge>
+              )}
             </Link>
           </Button>
         ))}
