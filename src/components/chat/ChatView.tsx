@@ -272,6 +272,17 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     setSending(false);
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!confirm("Delete this message? This can't be undone.")) return;
+    const { error } = await supabase.from("messages").delete().eq("id", messageId);
+    if (error) {
+      toast.error("Failed to delete message");
+    } else {
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      toast.success("Message deleted");
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
