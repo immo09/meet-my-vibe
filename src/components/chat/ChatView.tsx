@@ -6,6 +6,7 @@ import { Send, Paperclip, X, FileText, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { sendPushNotification } from "@/hooks/use-push-notifications";
 
 interface Message {
   id: string;
@@ -210,6 +211,9 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
       attachment_url: attachmentUrl,
       attachment_type: attachmentType,
     });
+
+    // Trigger push notification (non-blocking)
+    sendPushNotification(conversationId, userId, "New message", text || "Sent an attachment");
 
     setSending(false);
   };
