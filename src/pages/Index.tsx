@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import RateUserDialog from "@/components/RateUserDialog";
 import { useStartDm } from "@/hooks/use-start-dm";
 import AppNavigation from "@/components/AppNavigation";
+import PresenceIndicator from "@/components/PresenceIndicator";
 
 // Types
 type AnswerOption = { text: string; traits: string[] };
