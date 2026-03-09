@@ -18,6 +18,7 @@ import Chat from "./pages/Chat";
 import RequireAuth from "./components/auth/RequireAuth";
 import PushNotificationPrompt from "./components/PushNotificationPrompt";
 import InAppNotificationListener from "./components/InAppNotificationListener";
+import { PresenceProvider } from "./contexts/PresenceContext";
 
 
 const queryClient = new QueryClient();
