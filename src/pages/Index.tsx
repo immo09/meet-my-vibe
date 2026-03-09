@@ -401,13 +401,16 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
                     <CardContent className="p-6">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                         <div className="flex items-center gap-4">
-                          {p.avatar_url ? (
-                            <img src={p.avatar_url} alt={`${p.display_name || 'User'} avatar`} className="w-16 h-16 rounded-full object-cover" loading="lazy" />
-                          ) : (
-                            <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground grid place-items-center text-xl font-bold">
-                              {(p.display_name || 'U').charAt(0).toUpperCase()}
-                            </div>
-                          )}
+                          <div className="relative">
+                            {p.avatar_url ? (
+                              <img src={p.avatar_url} alt={`${p.display_name || 'User'} avatar`} className="w-16 h-16 rounded-full object-cover" loading="lazy" />
+                            ) : (
+                              <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground grid place-items-center text-xl font-bold">
+                                {(p.display_name || 'U').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <PresenceIndicator userId={p.id} size="sm" className="absolute -bottom-0.5 -right-0.5" />
+                          </div>
                           <div>
                             <h3 className="text-xl font-semibold inline-flex items-center gap-2">
                               {p.display_name || 'Anonymous'}
