@@ -16,7 +16,7 @@ export interface Conversation {
   name: string | null;
   created_by: string;
   created_at: string;
-  members: { user_id: string; display_name: string | null; avatar_url: string | null }[];
+  members: { user_id: string; display_name: string | null; avatar_url: string | null; last_seen_at: string | null }[];
   last_message?: { content: string; created_at: string } | null;
 }
 
