@@ -57,6 +57,7 @@ const ConversationList: React.FC<Props> = ({ conversations, loading, userId, onS
                   userId={otherMembers[0].user_id}
                   size="sm"
                   className="absolute -bottom-0.5 -right-0.5"
+                  lastSeenAt={otherMembers[0].last_seen_at}
                 />
               )}
             </div>
