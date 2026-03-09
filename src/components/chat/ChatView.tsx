@@ -2,15 +2,18 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send } from "lucide-react";
+import { Send, Paperclip, X, FileText, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface Message {
   id: string;
   sender_id: string;
   content: string;
   created_at: string;
+  attachment_url: string | null;
+  attachment_type: string | null;
 }
 
 interface Props {
@@ -18,21 +21,42 @@ interface Props {
   userId: string;
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+const isImageType = (type: string | null) =>
+  type?.startsWith("image/") ?? false;
+
 const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMsg, setNewMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [othersTyping, setOthersTyping] = useState<Set<string>>(new Set());
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  // Generate preview for pending file
+  useEffect(() => {
+    if (!pendingFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    if (pendingFile.type.startsWith("image/")) {
+      const url = URL.createObjectURL(pendingFile);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setPreviewUrl(null);
+  }, [pendingFile]);
 
   // Fetch existing messages
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from("messages")
-        .select("id, sender_id, content, created_at")
+        .select("id, sender_id, content, created_at, attachment_url, attachment_type")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true })
         .limit(200);
@@ -65,7 +89,6 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
             return [...prev, msg];
           });
 
-          // Clear typing for this sender
           setOthersTyping((prev) => {
             const next = new Set(prev);
             next.delete(msg.sender_id);
@@ -87,15 +110,13 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     };
   }, [conversationId, userId]);
 
-  // Typing indicator channel (broadcast, no DB)
+  // Typing indicator channel
   useEffect(() => {
     const channel = supabase
       .channel(`typing:${conversationId}`)
       .on("broadcast", { event: "typing" }, ({ payload }) => {
         if (payload.user_id === userId) return;
         setOthersTyping((prev) => new Set(prev).add(payload.user_id));
-
-        // Auto-clear after 3s of no typing signal
         setTimeout(() => {
           setOthersTyping((prev) => {
             const next = new Set(prev);
@@ -107,14 +128,12 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
       .subscribe();
 
     typingChannelRef.current = channel;
-
     return () => {
       supabase.removeChannel(channel);
       typingChannelRef.current = null;
     };
   }, [conversationId, userId]);
 
-  // Broadcast typing
   const broadcastTyping = useCallback(() => {
     typingChannelRef.current?.send({
       type: "broadcast",
@@ -131,20 +150,65 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMsg(e.target.value);
     broadcastTyping();
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {}, 2000);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File is too large. Maximum size is 10 MB.");
+      return;
+    }
+    setPendingFile(file);
+    // Reset input so same file can be re-selected
+    e.target.value = "";
+  };
+
+  const uploadFile = async (file: File): Promise<{ url: string; type: string } | null> => {
+    const ext = file.name.split(".").pop() || "bin";
+    const path = `${conversationId}/${crypto.randomUUID()}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from("chat-attachments")
+      .upload(path, file, { contentType: file.type });
+
+    if (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload file");
+      return null;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("chat-attachments")
+      .getPublicUrl(path);
+
+    return { url: publicUrlData.publicUrl, type: file.type };
   };
 
   const handleSend = async () => {
     const text = newMsg.trim();
-    if (!text) return;
+    if (!text && !pendingFile) return;
     setSending(true);
     setNewMsg("");
+
+    let attachmentUrl: string | null = null;
+    let attachmentType: string | null = null;
+
+    if (pendingFile) {
+      const result = await uploadFile(pendingFile);
+      if (result) {
+        attachmentUrl = result.url;
+        attachmentType = result.type;
+      }
+      setPendingFile(null);
+    }
 
     await supabase.from("messages").insert({
       conversation_id: conversationId,
       sender_id: userId,
-      content: text,
+      content: text || (attachmentUrl ? "" : ""),
+      attachment_url: attachmentUrl,
+      attachment_type: attachmentType,
     });
 
     setSending(false);
@@ -155,6 +219,37 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const renderAttachment = (msg: Message) => {
+    if (!msg.attachment_url) return null;
+
+    if (isImageType(msg.attachment_type)) {
+      return (
+        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
+          <img
+            src={msg.attachment_url}
+            alt="Shared image"
+            className="max-w-full rounded-lg max-h-60 object-cover"
+            loading="lazy"
+          />
+        </a>
+      );
+    }
+
+    // Generic file
+    const fileName = msg.attachment_url.split("/").pop() || "File";
+    return (
+      <a
+        href={msg.attachment_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 mt-1 p-2 rounded-lg bg-background/20 hover:bg-background/30 transition-colors"
+      >
+        <FileText className="h-4 w-4 shrink-0" />
+        <span className="text-xs truncate underline">{decodeURIComponent(fileName)}</span>
+      </a>
+    );
   };
 
   return (
@@ -173,7 +268,10 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
                     : "bg-muted text-foreground rounded-bl-md"
                 )}
               >
-                <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                {msg.content && (
+                  <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                )}
+                {renderAttachment(msg)}
                 <p className={cn("text-[10px] mt-1", mine ? "text-primary-foreground/60" : "text-muted-foreground")}>
                   {format(new Date(msg.created_at), "HH:mm")}
                 </p>
@@ -199,8 +297,41 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
         <div ref={bottomRef} />
       </div>
 
+      {/* Pending file preview */}
+      {pendingFile && (
+        <div className="border-t px-3 pt-2 flex items-center gap-2">
+          {previewUrl ? (
+            <img src={previewUrl} alt="Preview" className="h-16 w-16 rounded-lg object-cover" />
+          ) : (
+            <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center">
+              <FileText className="h-6 w-6 text-muted-foreground" />
+            </div>
+          )}
+          <span className="text-sm truncate flex-1 text-muted-foreground">{pendingFile.name}</span>
+          <Button size="icon" variant="ghost" onClick={() => setPendingFile(null)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       {/* Input */}
       <div className="border-t p-3 flex gap-2">
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          accept="image/*,.pdf,.doc,.docx,.txt,.zip"
+          onChange={handleFileSelect}
+        />
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={sending}
+          className="shrink-0"
+        >
+          <Paperclip className="h-4 w-4" />
+        </Button>
         <Input
           value={newMsg}
           onChange={handleInputChange}
@@ -208,7 +339,11 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
           placeholder="Type a message…"
           className="flex-1"
         />
-        <Button size="icon" onClick={handleSend} disabled={sending || !newMsg.trim()}>
+        <Button
+          size="icon"
+          onClick={handleSend}
+          disabled={sending || (!newMsg.trim() && !pendingFile)}
+        >
           <Send className="h-4 w-4" />
         </Button>
       </div>
