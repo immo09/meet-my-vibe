@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Paperclip, X, FileText, Check, CheckCheck } from "lucide-react";
+import { Send, Paperclip, X, FileText, Check, CheckCheck, Reply } from "lucide-react";
 import MessageReactions from "@/components/chat/MessageReactions";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -16,6 +16,7 @@ interface Message {
   created_at: string;
   attachment_url: string | null;
   attachment_type: string | null;
+  reply_to_id: string | null;
 }
 
 interface Props {
@@ -36,6 +37,7 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [membersLastRead, setMembersLastRead] = useState<Record<string, string>>({});
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -59,7 +61,7 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     (async () => {
       const { data } = await supabase
         .from("messages")
-        .select("id, sender_id, content, created_at, attachment_url, attachment_type")
+        .select("id, sender_id, content, created_at, attachment_url, attachment_type, reply_to_id")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true })
         .limit(200);
@@ -259,7 +261,10 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
       content: text || (attachmentUrl ? "" : ""),
       attachment_url: attachmentUrl,
       attachment_type: attachmentType,
+      reply_to_id: replyingTo?.id ?? null,
     });
+
+    setReplyingTo(null);
 
     // Trigger push notification (non-blocking)
     sendPushNotification(conversationId, userId, "New message", text || "Sent an attachment");
@@ -272,6 +277,34 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const renderQuotedMessage = (msg: Message) => {
+    if (!msg.reply_to_id) return null;
+    const original = messages.find((m) => m.id === msg.reply_to_id);
+    const mine = msg.sender_id === userId;
+    return (
+      <div
+        className={cn(
+          "text-xs px-2 py-1.5 rounded-lg mb-1 border-l-2 opacity-80 cursor-pointer",
+          mine
+            ? "bg-primary-foreground/10 border-primary-foreground/40 text-primary-foreground"
+            : "bg-background/40 border-primary/50 text-foreground"
+        )}
+        onClick={() => {
+          const el = document.getElementById(`msg-${msg.reply_to_id}`);
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          el?.classList.add("ring-2", "ring-primary");
+          setTimeout(() => el?.classList.remove("ring-2", "ring-primary"), 1500);
+        }}
+      >
+        {original ? (
+          <p className="truncate">{original.content || "📎 Attachment"}</p>
+        ) : (
+          <p className="italic opacity-60">Original message deleted</p>
+        )}
+      </div>
+    );
   };
 
   const renderAttachment = (msg: Message) => {
@@ -322,32 +355,62 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
           ));
 
           return (
-            <div key={msg.id} className={cn("group flex flex-col", mine ? "items-end" : "items-start")}>
-              <div
-                className={cn(
-                  "max-w-[75%] rounded-2xl px-4 py-2",
-                  mine
-                    ? "bg-primary text-primary-foreground rounded-br-md"
-                    : "bg-muted text-foreground rounded-bl-md"
+            <div
+              id={`msg-${msg.id}`}
+              key={msg.id}
+              className={cn(
+                "group flex flex-col transition-all rounded-xl",
+                mine ? "items-end" : "items-start"
+              )}
+            >
+              <div className="flex items-end gap-1.5">
+                {/* Reply button – shown on hover for non-mine messages on left */}
+                {!mine && (
+                  <button
+                    onClick={() => setReplyingTo(msg)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-muted text-muted-foreground"
+                    aria-label="Reply"
+                  >
+                    <Reply className="h-3.5 w-3.5" />
+                  </button>
                 )}
-              >
-                {msg.content && (
-                  <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
-                )}
-                {renderAttachment(msg)}
-                <div className={cn("flex items-center gap-1 mt-1", mine ? "justify-end" : "")}>
-                  <span className={cn("text-[10px]", mine ? "text-primary-foreground/60" : "text-muted-foreground")}>
-                    {format(new Date(msg.created_at), "HH:mm")}
-                  </span>
-                  {mine && (
-                    isRead
-                      ? <CheckCheck className="h-3 w-3 text-primary-foreground/80" />
-                      : <Check className="h-3 w-3 text-primary-foreground/40" />
+                <div
+                  className={cn(
+                    "max-w-[75%] rounded-2xl px-4 py-2",
+                    mine
+                      ? "bg-primary text-primary-foreground rounded-br-md"
+                      : "bg-muted text-foreground rounded-bl-md"
                   )}
+                >
+                  {renderQuotedMessage(msg)}
+                  {msg.content && (
+                    <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                  )}
+                  {renderAttachment(msg)}
+                  <div className={cn("flex items-center gap-1 mt-1", mine ? "justify-end" : "")}>
+                    <span className={cn("text-[10px]", mine ? "text-primary-foreground/60" : "text-muted-foreground")}>
+                      {format(new Date(msg.created_at), "HH:mm")}
+                    </span>
+                    {mine && (
+                      isRead
+                        ? <CheckCheck className="h-3 w-3 text-primary-foreground/80" />
+                        : <Check className="h-3 w-3 text-primary-foreground/40" />
+                    )}
+                  </div>
                 </div>
+                {/* Reply button for own messages on right */}
+                {mine && (
+                  <button
+                    onClick={() => setReplyingTo(msg)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-muted text-muted-foreground"
+                    aria-label="Reply"
+                  >
+                    <Reply className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
               {showReadReceipt && (
-                <span className="text-[10px] text-muted-foreground mt-0.5 mr-1">Read</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5 mx-8">Read</span>
               )}
               <MessageReactions messageId={msg.id} userId={userId} mine={mine} />
             </div>
@@ -370,6 +433,23 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
 
         <div ref={bottomRef} />
       </div>
+
+      {/* Reply preview bar */}
+      {replyingTo && (
+        <div className="border-t px-3 pt-2 pb-0 flex items-center gap-2 bg-muted/30">
+          <div className="flex-1 border-l-2 border-primary pl-2">
+            <p className="text-xs font-medium text-primary">
+              {replyingTo.sender_id === userId ? "You" : "Them"}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {replyingTo.content || "📎 Attachment"}
+            </p>
+          </div>
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setReplyingTo(null)}>
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
 
       {/* Pending file preview */}
       {pendingFile && (
