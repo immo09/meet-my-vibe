@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import ConversationList from "@/components/chat/ConversationList";
 import ChatView from "@/components/chat/ChatView";
@@ -21,7 +22,8 @@ export interface Conversation {
 const Chat: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConvoId, setActiveConvoId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeConvoId, setActiveConvoId] = useState<string | null>(searchParams.get("c"));
   const [loading, setLoading] = useState(true);
   const [newDialogOpen, setNewDialogOpen] = useState(false);
 

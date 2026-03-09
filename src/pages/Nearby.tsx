@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDistance, haversineDistanceKm } from "@/lib/geo";
 import LocationShare from "@/components/location/LocationShare";
 import RateUserDialog from "@/components/RateUserDialog";
+import { useStartDm } from "@/hooks/use-start-dm";
+import AppNavigation from "@/components/AppNavigation";
 
 interface Profile {
   id: string;
@@ -26,6 +28,7 @@ const Nearby: React.FC = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [rateTarget, setRateTarget] = useState<{ id: string; name: string } | null>(null);
+  const { startDm, starting } = useStartDm();
 
   useEffect(() => {
     (async () => {
@@ -140,7 +143,9 @@ const Nearby: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="hero" className="flex-1">👋 Say hi</Button>
+                  <Button variant="hero" className="flex-1" onClick={() => startDm(p.id)} disabled={starting === p.id}>
+                    {starting === p.id ? "Opening…" : "👋 Say hi"}
+                  </Button>
                   <Button
                     variant="outline"
                     className="flex-1"
@@ -158,6 +163,8 @@ const Nearby: React.FC = () => {
           )}
         </section>
       </div>
+
+      <AppNavigation />
 
       <RateUserDialog
         open={!!rateTarget}
