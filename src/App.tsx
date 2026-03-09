@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
 import RequireAuth from "./components/auth/RequireAuth";
 import PushNotificationPrompt from "./components/PushNotificationPrompt";
+import InAppNotificationListener from "./components/InAppNotificationListener";
 
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             <PushNotificationPrompt />
+            <InAppNotificationListener />
           </BrowserRouter>
         </TooltipProvider>
       </HelmetProvider>
