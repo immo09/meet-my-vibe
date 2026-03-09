@@ -115,19 +115,22 @@ const Nearby: React.FC = () => {
             <Card key={p.id} className="card-hover">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-4 mb-3">
-                  <div className="flex items-center gap-4">
-                    {p.avatar_url ? (
-                      <img
-                        src={p.avatar_url}
-                        alt={`${p.display_name || 'User'} avatar`}
-                        className="w-14 h-14 rounded-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground grid place-items-center text-lg font-bold">
-                        {(p.display_name || 'U').charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-4">
+                     <div className="relative">
+                      {p.avatar_url ? (
+                        <img
+                          src={p.avatar_url}
+                          alt={`${p.display_name || 'User'} avatar`}
+                          className="w-14 h-14 rounded-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground grid place-items-center text-lg font-bold">
+                          {(p.display_name || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <PresenceIndicator userId={p.id} size="sm" className="absolute -bottom-0.5 -right-0.5" />
+                     </div>
                     <div>
                       <h2 className="text-lg font-semibold inline-flex items-center gap-2">
                         {p.display_name || 'Anonymous'}
