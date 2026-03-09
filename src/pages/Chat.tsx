@@ -8,6 +8,7 @@ import NewConversationDialog from "@/components/chat/NewConversationDialog";
 import AppNavigation from "@/components/AppNavigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus } from "lucide-react";
+import PresenceIndicator from "@/components/PresenceIndicator";
 
 export interface Conversation {
   id: string;
@@ -141,14 +142,20 @@ const Chat: React.FC = () => {
               <Button size="icon" variant="ghost" onClick={() => setActiveConvoId(null)}>
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <h2 className="text-lg font-semibold truncate">
-                {activeConvo?.type === "group"
-                  ? activeConvo.name || "Group Chat"
-                  : activeConvo?.members
-                      .filter((m) => m.user_id !== userId)
-                      .map((m) => m.display_name || "Anonymous")
-                      .join(", ") || "Chat"}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold truncate">
+                  {activeConvo?.type === "group"
+                    ? activeConvo.name || "Group Chat"
+                    : activeConvo?.members
+                        .filter((m) => m.user_id !== userId)
+                        .map((m) => m.display_name || "Anonymous")
+                        .join(", ") || "Chat"}
+                </h2>
+                {activeConvo?.type === "direct" && (() => {
+                  const other = activeConvo.members.find((m) => m.user_id !== userId);
+                  return other ? <PresenceIndicator userId={other.user_id} size="sm" /> : null;
+                })()}
+              </div>
             </header>
             <ChatView conversationId={activeConvoId} userId={userId!} />
           </>

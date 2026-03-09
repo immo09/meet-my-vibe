@@ -2,6 +2,7 @@ import React from "react";
 import type { Conversation } from "@/pages/Chat";
 import { formatDistanceToNow } from "date-fns";
 import { Users, User } from "lucide-react";
+import PresenceIndicator from "@/components/PresenceIndicator";
 
 interface Props {
   conversations: Conversation[];
@@ -41,13 +42,22 @@ const ConversationList: React.FC<Props> = ({ conversations, loading, userId, onS
             onClick={() => onSelect(c.id)}
             className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors border-b text-left"
           >
-            <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground grid place-items-center shrink-0">
-              {c.type === "group" ? (
-                <Users className="h-5 w-5" />
-              ) : avatar?.avatar_url ? (
-                <img src={avatar.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
-              ) : (
-                <span className="text-lg font-bold">{(avatar?.display_name || "A").charAt(0).toUpperCase()}</span>
+            <div className="relative w-12 h-12 shrink-0">
+              <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground grid place-items-center">
+                {c.type === "group" ? (
+                  <Users className="h-5 w-5" />
+                ) : avatar?.avatar_url ? (
+                  <img src={avatar.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+                ) : (
+                  <span className="text-lg font-bold">{(avatar?.display_name || "A").charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              {c.type === "direct" && otherMembers[0] && (
+                <PresenceIndicator
+                  userId={otherMembers[0].user_id}
+                  size="sm"
+                  className="absolute -bottom-0.5 -right-0.5"
+                />
               )}
             </div>
             <div className="flex-1 min-w-0">
