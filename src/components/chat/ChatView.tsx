@@ -279,6 +279,34 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     }
   };
 
+  const renderQuotedMessage = (msg: Message) => {
+    if (!msg.reply_to_id) return null;
+    const original = messages.find((m) => m.id === msg.reply_to_id);
+    const mine = msg.sender_id === userId;
+    return (
+      <div
+        className={cn(
+          "text-xs px-2 py-1.5 rounded-lg mb-1 border-l-2 opacity-80 cursor-pointer",
+          mine
+            ? "bg-primary-foreground/10 border-primary-foreground/40 text-primary-foreground"
+            : "bg-background/40 border-primary/50 text-foreground"
+        )}
+        onClick={() => {
+          const el = document.getElementById(`msg-${msg.reply_to_id}`);
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          el?.classList.add("ring-2", "ring-primary");
+          setTimeout(() => el?.classList.remove("ring-2", "ring-primary"), 1500);
+        }}
+      >
+        {original ? (
+          <p className="truncate">{original.content || "📎 Attachment"}</p>
+        ) : (
+          <p className="italic opacity-60">Original message deleted</p>
+        )}
+      </div>
+    );
+  };
+
   const renderAttachment = (msg: Message) => {
     if (!msg.attachment_url) return null;
 
