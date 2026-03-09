@@ -16,6 +16,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import RateUserDialog from "@/components/RateUserDialog";
+import { useStartDm } from "@/hooks/use-start-dm";
+import AppNavigation from "@/components/AppNavigation";
 
 // Types
 type AnswerOption = { text: string; traits: string[] };
@@ -204,7 +206,8 @@ const Index = () => {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [hangoutMsg, setHangoutMsg] = useState("");
   const [hangoutCount, setHangoutCount] = useState(3);
-  const [rateTarget, setRateTarget] = useState<{ id: string; name: string } | null>(null);
+const [rateTarget, setRateTarget] = useState<{ id: string; name: string } | null>(null);
+const { startDm, starting } = useStartDm();
 const [profiles, setProfiles] = useState<any[]>([]);
 const [loadingProfiles, setLoadingProfiles] = useState(false);
 
@@ -423,8 +426,8 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
                       {p.bio && <p className="text-muted-foreground mb-4">{p.bio}</p>}
 
                       <div className="flex gap-2">
-                        <Button variant="hero" className="flex-1">
-                          👋 Say hi
+                        <Button variant="hero" className="flex-1" onClick={() => startDm(p.id)} disabled={starting === p.id}>
+                          {starting === p.id ? "Opening…" : "👋 Say hi"}
                         </Button>
                         <Button
                           variant="outline"
