@@ -2,6 +2,7 @@ import React from "react";
 import type { Conversation } from "@/pages/Chat";
 import { formatDistanceToNow } from "date-fns";
 import { Users, User } from "lucide-react";
+import PresenceIndicator from "@/components/PresenceIndicator";
 
 interface Props {
   conversations: Conversation[];
