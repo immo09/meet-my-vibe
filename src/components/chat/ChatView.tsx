@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Paperclip, X, FileText, Image as ImageIcon } from "lucide-react";
+import { Send, Paperclip, X, FileText } from "lucide-react";
+import MessageReactions from "@/components/chat/MessageReactions";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -263,7 +264,7 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
         {messages.map((msg) => {
           const mine = msg.sender_id === userId;
           return (
-            <div key={msg.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+            <div key={msg.id} className={cn("group flex flex-col", mine ? "items-end" : "items-start")}>
               <div
                 className={cn(
                   "max-w-[75%] rounded-2xl px-4 py-2",
@@ -280,6 +281,7 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
                   {format(new Date(msg.created_at), "HH:mm")}
                 </p>
               </div>
+              <MessageReactions messageId={msg.id} userId={userId} mine={mine} />
             </div>
           );
         })}
