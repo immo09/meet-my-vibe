@@ -16,6 +16,8 @@ import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
 import RequireAuth from "./components/auth/RequireAuth";
+import PushNotificationPrompt from "./components/PushNotificationPrompt";
+import InAppNotificationListener from "./components/InAppNotificationListener";
 
 
 const queryClient = new QueryClient();
@@ -46,6 +48,8 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <PushNotificationPrompt />
+            <InAppNotificationListener />
           </BrowserRouter>
         </TooltipProvider>
       </HelmetProvider>
