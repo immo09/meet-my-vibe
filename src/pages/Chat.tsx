@@ -16,7 +16,7 @@ export interface Conversation {
   name: string | null;
   created_by: string;
   created_at: string;
-  members: { user_id: string; display_name: string | null; avatar_url: string | null }[];
+  members: { user_id: string; display_name: string | null; avatar_url: string | null; last_seen_at: string | null }[];
   last_message?: { content: string; created_at: string } | null;
 }
 
@@ -73,7 +73,7 @@ const Chat: React.FC = () => {
     const memberUserIds = [...new Set((allMembers ?? []).map((m) => m.user_id))];
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, display_name, avatar_url")
+      .select("id, display_name, avatar_url, last_seen_at")
       .in("id", memberUserIds);
 
     const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
@@ -85,7 +85,7 @@ const Chat: React.FC = () => {
         .filter((m) => m.conversation_id === c.id)
         .map((m) => {
           const p = profileMap.get(m.user_id);
-          return { user_id: m.user_id, display_name: p?.display_name ?? null, avatar_url: p?.avatar_url ?? null };
+          return { user_id: m.user_id, display_name: p?.display_name ?? null, avatar_url: p?.avatar_url ?? null, last_seen_at: p?.last_seen_at ?? null };
         });
 
       const { data: lastMsg } = await supabase
@@ -153,7 +153,7 @@ const Chat: React.FC = () => {
                 </h2>
                 {activeConvo?.type === "direct" && (() => {
                   const other = activeConvo.members.find((m) => m.user_id !== userId);
-                  return other ? <PresenceIndicator userId={other.user_id} size="sm" /> : null;
+                  return other ? <PresenceIndicator userId={other.user_id} size="sm" lastSeenAt={other.last_seen_at} showLastSeen /> : null;
                 })()}
               </div>
             </header>
