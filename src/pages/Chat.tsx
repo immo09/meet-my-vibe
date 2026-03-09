@@ -8,6 +8,7 @@ import NewConversationDialog from "@/components/chat/NewConversationDialog";
 import AppNavigation from "@/components/AppNavigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus } from "lucide-react";
+import PresenceIndicator from "@/components/PresenceIndicator";
 
 export interface Conversation {
   id: string;
