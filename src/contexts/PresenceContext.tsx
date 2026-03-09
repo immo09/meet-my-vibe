@@ -45,6 +45,8 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
           await channel.track({ user_id: userId, online_at: new Date().toISOString() });
+          // Update last_seen_at in profile
+          await supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", userId);
         }
       });
 
