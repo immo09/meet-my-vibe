@@ -434,6 +434,23 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
         <div ref={bottomRef} />
       </div>
 
+      {/* Reply preview bar */}
+      {replyingTo && (
+        <div className="border-t px-3 pt-2 pb-0 flex items-center gap-2 bg-muted/30">
+          <div className="flex-1 border-l-2 border-primary pl-2">
+            <p className="text-xs font-medium text-primary">
+              {replyingTo.sender_id === userId ? "You" : "Them"}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {replyingTo.content || "📎 Attachment"}
+            </p>
+          </div>
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setReplyingTo(null)}>
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
       {/* Pending file preview */}
       {pendingFile && (
         <div className="border-t px-3 pt-2 flex items-center gap-2">
