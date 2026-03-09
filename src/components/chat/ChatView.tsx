@@ -261,7 +261,10 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
       content: text || (attachmentUrl ? "" : ""),
       attachment_url: attachmentUrl,
       attachment_type: attachmentType,
+      reply_to_id: replyingTo?.id ?? null,
     });
+
+    setReplyingTo(null);
 
     // Trigger push notification (non-blocking)
     sendPushNotification(conversationId, userId, "New message", text || "Sent an attachment");
