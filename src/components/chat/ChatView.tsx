@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Paperclip, X, FileText, Check, CheckCheck } from "lucide-react";
+import { Send, Paperclip, X, FileText, Check, CheckCheck, Reply } from "lucide-react";
 import MessageReactions from "@/components/chat/MessageReactions";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -16,6 +16,7 @@ interface Message {
   created_at: string;
   attachment_url: string | null;
   attachment_type: string | null;
+  reply_to_id: string | null;
 }
 
 interface Props {
@@ -36,6 +37,7 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [membersLastRead, setMembersLastRead] = useState<Record<string, string>>({});
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
