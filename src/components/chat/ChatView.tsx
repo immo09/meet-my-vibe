@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Paperclip, X, FileText, Check, CheckCheck, Reply } from "lucide-react";
+import { Send, Paperclip, X, FileText, Check, CheckCheck, Reply, Trash2 } from "lucide-react";
 import MessageReactions from "@/components/chat/MessageReactions";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -272,6 +272,17 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     setSending(false);
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!confirm("Delete this message? This can't be undone.")) return;
+    const { error } = await supabase.from("messages").delete().eq("id", messageId);
+    if (error) {
+      toast.error("Failed to delete message");
+    } else {
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      toast.success("Message deleted");
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -398,15 +409,24 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
                     )}
                   </div>
                 </div>
-                {/* Reply button for own messages on right */}
+                {/* Reply & Delete buttons for own messages on right */}
                 {mine && (
-                  <button
-                    onClick={() => setReplyingTo(msg)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-muted text-muted-foreground"
-                    aria-label="Reply"
-                  >
-                    <Reply className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => setReplyingTo(msg)}
+                      className="p-1 rounded-full hover:bg-muted text-muted-foreground"
+                      aria-label="Reply"
+                    >
+                      <Reply className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteMessage(msg.id)}
+                      className="p-1 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                      aria-label="Delete message"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 )}
               </div>
               {showReadReceipt && (
