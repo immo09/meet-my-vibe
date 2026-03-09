@@ -19,18 +19,21 @@ export type Database = {
           conversation_id: string
           id: string
           joined_at: string
+          last_read_at: string | null
           user_id: string
         }
         Insert: {
           conversation_id: string
           id?: string
           joined_at?: string
+          last_read_at?: string | null
           user_id: string
         }
         Update: {
           conversation_id?: string
           id?: string
           joined_at?: string
+          last_read_at?: string | null
           user_id?: string
         }
         Relationships: [
