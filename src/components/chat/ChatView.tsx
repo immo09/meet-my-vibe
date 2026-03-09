@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Paperclip, X, FileText } from "lucide-react";
+import { Send, Paperclip, X, FileText, Check, CheckCheck } from "lucide-react";
 import MessageReactions from "@/components/chat/MessageReactions";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -35,6 +35,7 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
   const [othersTyping, setOthersTyping] = useState<Set<string>>(new Set());
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [membersLastRead, setMembersLastRead] = useState<Record<string, string>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -103,6 +104,53 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
             .eq("conversation_id", conversationId)
             .eq("user_id", userId)
             .then();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, userId]);
+
+  // Fetch members' last_read_at for read receipts
+  useEffect(() => {
+    const fetchMembers = async () => {
+      const { data } = await supabase
+        .from("conversation_members")
+        .select("user_id, last_read_at")
+        .eq("conversation_id", conversationId)
+        .neq("user_id", userId);
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((m) => {
+          if (m.last_read_at) map[m.user_id] = m.last_read_at;
+        });
+        setMembersLastRead(map);
+      }
+    };
+    fetchMembers();
+
+    // Subscribe to conversation_members changes for read receipt updates
+    const channel = supabase
+      .channel(`read-receipts:${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "conversation_members",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updated = payload.new as { user_id: string; last_read_at: string | null };
+          if (updated.user_id === userId) return;
+          if (updated.last_read_at) {
+            setMembersLastRead((prev) => ({
+              ...prev,
+              [updated.user_id]: updated.last_read_at!,
+            }));
+          }
         }
       )
       .subscribe();
@@ -261,8 +309,18 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     <div className="flex-1 flex flex-col min-h-0">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.map((msg) => {
+        {messages.map((msg, idx) => {
           const mine = msg.sender_id === userId;
+          // Read receipt: check if any other member has read past this message
+          const isRead = mine && Object.values(membersLastRead).some(
+            (lastRead) => new Date(lastRead) >= new Date(msg.created_at)
+          );
+          // Only show read receipt on the last consecutive own message that's been read
+          const nextMsg = messages[idx + 1];
+          const showReadReceipt = mine && isRead && (!nextMsg || nextMsg.sender_id !== userId || !Object.values(membersLastRead).some(
+            (lastRead) => new Date(lastRead) >= new Date(nextMsg.created_at)
+          ));
+
           return (
             <div key={msg.id} className={cn("group flex flex-col", mine ? "items-end" : "items-start")}>
               <div
@@ -277,10 +335,20 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
                   <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                 )}
                 {renderAttachment(msg)}
-                <p className={cn("text-[10px] mt-1", mine ? "text-primary-foreground/60" : "text-muted-foreground")}>
-                  {format(new Date(msg.created_at), "HH:mm")}
-                </p>
+                <div className={cn("flex items-center gap-1 mt-1", mine ? "justify-end" : "")}>
+                  <span className={cn("text-[10px]", mine ? "text-primary-foreground/60" : "text-muted-foreground")}>
+                    {format(new Date(msg.created_at), "HH:mm")}
+                  </span>
+                  {mine && (
+                    isRead
+                      ? <CheckCheck className="h-3 w-3 text-primary-foreground/80" />
+                      : <Check className="h-3 w-3 text-primary-foreground/40" />
+                  )}
+                </div>
               </div>
+              {showReadReceipt && (
+                <span className="text-[10px] text-muted-foreground mt-0.5 mr-1">Read</span>
+              )}
               <MessageReactions messageId={msg.id} userId={userId} mine={mine} />
             </div>
           );
