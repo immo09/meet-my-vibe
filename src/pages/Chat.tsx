@@ -73,7 +73,7 @@ const Chat: React.FC = () => {
     const memberUserIds = [...new Set((allMembers ?? []).map((m) => m.user_id))];
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, display_name, avatar_url")
+      .select("id, display_name, avatar_url, last_seen_at")
       .in("id", memberUserIds);
 
     const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
