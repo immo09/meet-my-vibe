@@ -34,8 +34,15 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
         .order("created_at", { ascending: true })
         .limit(200);
       if (data) setMessages(data);
+
+      // Mark conversation as read
+      await supabase
+        .from("conversation_members")
+        .update({ last_read_at: new Date().toISOString() })
+        .eq("conversation_id", conversationId)
+        .eq("user_id", userId);
     })();
-  }, [conversationId]);
+  }, [conversationId, userId]);
 
   // Subscribe to realtime
   useEffect(() => {
@@ -55,6 +62,14 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
             if (prev.some((m) => m.id === msg.id)) return prev;
             return [...prev, msg];
           });
+
+          // Mark as read when new message arrives (user is viewing conversation)
+          supabase
+            .from("conversation_members")
+            .update({ last_read_at: new Date().toISOString() })
+            .eq("conversation_id", conversationId)
+            .eq("user_id", userId)
+            .then();
         }
       )
       .subscribe();
@@ -62,7 +77,7 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, userId]);
 
   // Auto-scroll
   useEffect(() => {
