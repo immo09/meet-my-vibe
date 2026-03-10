@@ -532,7 +532,12 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
                     </div>
                   ) : (
                     msg.content && (
-                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">
+                        {searchQuery.trim() && msg.content.toLowerCase().includes(searchQuery.toLowerCase())
+                          ? highlightText(msg.content, searchQuery)
+                          : msg.content}
+                      </p>
+                    )
                     )
                   )}
                   {renderAttachment(msg)}
