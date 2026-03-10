@@ -40,15 +40,15 @@ const PresenceIndicator: React.FC<Props> = ({ userId, className, size = "md", la
         className={cn(
           "rounded-full border-2 border-background block shrink-0",
           sizeMap[size],
-          online ? "bg-green-500" : "bg-muted-foreground/40",
+          dotColor,
           className
         )}
-        title={lastSeenText}
-        aria-label={lastSeenText}
+        title={statusText}
+        aria-label={statusText}
       />
-      {showLastSeen && !online && lastSeenAt && (
+      {showLastSeen && (
         <span className="text-xs text-muted-foreground whitespace-nowrap">
-          {lastSeenText}
+          {statusText}
         </span>
       )}
     </span>
