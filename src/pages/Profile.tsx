@@ -25,6 +25,7 @@ const Profile: React.FC = () => {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
     (async () => {
