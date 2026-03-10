@@ -105,7 +105,8 @@ const Profile: React.FC = () => {
           display_name: displayName || null,
           username: username || null,
           bio: bio || null,
-        })
+          status_message: statusMessage || null,
+        } as any)
         .eq("id", userId);
       if (error) throw error;
       toast({ title: "Profile saved" });
