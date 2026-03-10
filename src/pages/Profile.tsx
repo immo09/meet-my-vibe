@@ -186,6 +186,21 @@ const Profile: React.FC = () => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={statusMessage} onValueChange={setStatusMessage}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Set your status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Available">🟢 Available</SelectItem>
+                  <SelectItem value="Away">🟡 Away</SelectItem>
+                  <SelectItem value="Busy">🔴 Busy</SelectItem>
+                  <SelectItem value="Do Not Disturb">⛔ Do Not Disturb</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="bio">Bio</Label>
               <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell people about yourself…" rows={3} />
             </div>
