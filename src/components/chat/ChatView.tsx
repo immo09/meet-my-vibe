@@ -275,6 +275,34 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     setSending(false);
   };
 
+  const startEditing = (msg: Message) => {
+    setEditingMsg(msg);
+    setEditText(msg.content);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingMsg) return;
+    const trimmed = editText.trim();
+    if (!trimmed || trimmed === editingMsg.content) {
+      setEditingMsg(null);
+      return;
+    }
+    const { error } = await supabase
+      .from("messages")
+      .update({ content: trimmed, edited_at: new Date().toISOString() })
+      .eq("id", editingMsg.id);
+    if (error) {
+      toast.error("Failed to edit message");
+    } else {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === editingMsg.id ? { ...m, content: trimmed, edited_at: new Date().toISOString() } : m
+        )
+      );
+    }
+    setEditingMsg(null);
+  };
+
   const handleDeleteMessage = async (messageId: string) => {
     if (!confirm("Delete this message? This can't be undone.")) return;
     const { error } = await supabase.from("messages").delete().eq("id", messageId);
