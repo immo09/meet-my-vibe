@@ -18,13 +18,21 @@ const sizeMap = {
   lg: "h-3.5 w-3.5",
 };
 
-const PresenceIndicator: React.FC<Props> = ({ userId, className, size = "md", lastSeenAt, showLastSeen = false }) => {
+const PresenceIndicator: React.FC<Props> = ({ userId, className, size = "md", lastSeenAt, showLastSeen = false, statusMessage }) => {
   const { isOnline } = usePresence();
   const online = isOnline(userId);
 
-  const lastSeenText = !online && lastSeenAt
-    ? `Last seen ${formatDistanceToNow(new Date(lastSeenAt), { addSuffix: true })}`
-    : online ? "Online" : "Offline";
+  const statusText = statusMessage
+    ? statusMessage
+    : !online && lastSeenAt
+      ? `Last seen ${formatDistanceToNow(new Date(lastSeenAt), { addSuffix: true })}`
+      : online ? "Online" : "Offline";
+
+  const dotColor = statusMessage === "Busy" || statusMessage === "Do Not Disturb"
+    ? "bg-destructive"
+    : statusMessage === "Away"
+      ? "bg-yellow-500"
+      : online ? "bg-green-500" : "bg-muted-foreground/40";
 
   return (
     <span className={cn("inline-flex items-center gap-1.5", showLastSeen && "gap-1.5")}>
