@@ -469,12 +469,19 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
                 {/* Reply & Delete buttons for own messages on right */}
                 {mine && (
                   <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
+                     <button
                       onClick={() => setReplyingTo(msg)}
                       className="p-1 rounded-full hover:bg-muted text-muted-foreground"
                       aria-label="Reply"
                     >
                       <Reply className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => startEditing(msg)}
+                      className="p-1 rounded-full hover:bg-muted text-muted-foreground"
+                      aria-label="Edit message"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleDeleteMessage(msg.id)}
