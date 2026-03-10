@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Paperclip, X, FileText, Check, CheckCheck, Reply, Trash2, Pencil } from "lucide-react";
+import { Send, Paperclip, X, FileText, Check, CheckCheck, Reply, Trash2, Pencil, Search, ChevronUp, ChevronDown } from "lucide-react";
 import MessageReactions from "@/components/chat/MessageReactions";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -41,6 +41,10 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [editText, setEditText] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<number[]>([]);
+  const [searchIndex, setSearchIndex] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -395,8 +399,85 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     );
   };
 
+  const highlightText = (text: string, query: string) => {
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+    return parts.map((part, i) =>
+      part.toLowerCase() === query.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-300/80 text-foreground rounded-sm px-0.5">{part}</mark>
+      ) : part
+    );
+  };
+
+  // Search logic
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearchIndex(0);
+      return;
+    }
+    const q = searchQuery.toLowerCase();
+    const indices = messages
+      .map((m, i) => (m.content.toLowerCase().includes(q) ? i : -1))
+      .filter((i) => i !== -1);
+    setSearchResults(indices);
+    setSearchIndex(0);
+    if (indices.length > 0) {
+      const msgId = messages[indices[0]].id;
+      document.getElementById(`msg-${msgId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [searchQuery, messages]);
+
+  const navigateSearch = (dir: 1 | -1) => {
+    if (searchResults.length === 0) return;
+    const next = (searchIndex + dir + searchResults.length) % searchResults.length;
+    setSearchIndex(next);
+    const msgId = messages[searchResults[next]].id;
+    const el = document.getElementById(`msg-${msgId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.classList.add("ring-2", "ring-primary");
+    setTimeout(() => el?.classList.remove("ring-2", "ring-primary"), 1500);
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
+      {/* Search bar */}
+      {searchOpen && (
+        <div className="border-b px-3 py-2 flex items-center gap-2 bg-muted/30">
+          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search messages…"
+            className="flex-1 h-8 text-sm"
+            autoFocus
+          />
+          {searchResults.length > 0 && (
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {searchIndex + 1}/{searchResults.length}
+            </span>
+          )}
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => navigateSearch(-1)} disabled={searchResults.length === 0}>
+            <ChevronUp className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => navigateSearch(1)} disabled={searchResults.length === 0}>
+            <ChevronDown className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setSearchOpen(false); setSearchQuery(""); }}>
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
+      {/* Search toggle button */}
+      {!searchOpen && (
+        <div className="flex justify-end px-3 pt-1">
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setSearchOpen(true)}>
+            <Search className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((msg, idx) => {
@@ -461,7 +542,11 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
                     </div>
                   ) : (
                     msg.content && (
-                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">
+                        {searchQuery.trim() && msg.content.toLowerCase().includes(searchQuery.toLowerCase())
+                          ? highlightText(msg.content, searchQuery)
+                          : msg.content}
+                      </p>
                     )
                   )}
                   {renderAttachment(msg)}
