@@ -9,6 +9,7 @@ interface Props {
   size?: "sm" | "md" | "lg";
   lastSeenAt?: string | null;
   showLastSeen?: boolean;
+  statusMessage?: string | null;
 }
 
 const sizeMap = {
