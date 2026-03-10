@@ -425,14 +425,40 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
                   )}
                 >
                   {renderQuotedMessage(msg)}
-                  {msg.content && (
-                    <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                  {editingMsg?.id === msg.id ? (
+                    <div className="flex items-center gap-1">
+                      <Input
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); handleSaveEdit(); }
+                          if (e.key === "Escape") setEditingMsg(null);
+                        }}
+                        className="h-7 text-sm bg-background/20 border-none text-foreground"
+                        autoFocus
+                      />
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleSaveEdit}>
+                        <Check className="h-3 w-3" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingMsg(null)}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    msg.content && (
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                    )
                   )}
                   {renderAttachment(msg)}
                   <div className={cn("flex items-center gap-1 mt-1", mine ? "justify-end" : "")}>
                     <span className={cn("text-[10px]", mine ? "text-primary-foreground/60" : "text-muted-foreground")}>
                       {format(new Date(msg.created_at), "HH:mm")}
                     </span>
+                    {msg.edited_at && (
+                      <span className={cn("text-[10px] italic", mine ? "text-primary-foreground/50" : "text-muted-foreground/70")}>
+                        (edited)
+                      </span>
+                    )}
                     {mine && (
                       isRead
                         ? <CheckCheck className="h-3 w-3 text-primary-foreground/80" />
