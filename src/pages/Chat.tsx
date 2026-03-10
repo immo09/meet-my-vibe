@@ -85,7 +85,7 @@ const Chat: React.FC = () => {
         .filter((m) => m.conversation_id === c.id)
         .map((m) => {
           const p = profileMap.get(m.user_id);
-          return { user_id: m.user_id, display_name: p?.display_name ?? null, avatar_url: p?.avatar_url ?? null, last_seen_at: p?.last_seen_at ?? null };
+          return { user_id: m.user_id, display_name: p?.display_name ?? null, avatar_url: p?.avatar_url ?? null, last_seen_at: p?.last_seen_at ?? null, status_message: (p as any)?.status_message ?? null };
         });
 
       const { data: lastMsg } = await supabase
