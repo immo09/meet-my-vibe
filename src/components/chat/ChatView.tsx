@@ -64,7 +64,7 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     (async () => {
       const { data } = await supabase
         .from("messages")
-        .select("id, sender_id, content, created_at, attachment_url, attachment_type, reply_to_id")
+        .select("id, sender_id, content, created_at, attachment_url, attachment_type, reply_to_id, edited_at")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true })
         .limit(200);
