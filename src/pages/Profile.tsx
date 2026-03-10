@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Camera, Loader2, ArrowLeft } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const Profile: React.FC = () => {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -42,6 +44,7 @@ const Profile: React.FC = () => {
         setUsername(data.username ?? "");
         setBio(data.bio ?? "");
         setAvatarUrl(data.avatar_url);
+        setStatusMessage((data as any).status_message ?? "");
       }
       setLoading(false);
     })();
@@ -102,7 +105,8 @@ const Profile: React.FC = () => {
           display_name: displayName || null,
           username: username || null,
           bio: bio || null,
-        })
+          status_message: statusMessage || null,
+        } as any)
         .eq("id", userId);
       if (error) throw error;
       toast({ title: "Profile saved" });
@@ -179,6 +183,21 @@ const Profile: React.FC = () => {
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="alex123" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={statusMessage} onValueChange={setStatusMessage}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Set your status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Available">🟢 Available</SelectItem>
+                  <SelectItem value="Away">🟡 Away</SelectItem>
+                  <SelectItem value="Busy">🔴 Busy</SelectItem>
+                  <SelectItem value="Do Not Disturb">⛔ Do Not Disturb</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

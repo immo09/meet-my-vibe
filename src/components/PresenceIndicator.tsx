@@ -9,6 +9,7 @@ interface Props {
   size?: "sm" | "md" | "lg";
   lastSeenAt?: string | null;
   showLastSeen?: boolean;
+  statusMessage?: string | null;
 }
 
 const sizeMap = {
@@ -17,13 +18,21 @@ const sizeMap = {
   lg: "h-3.5 w-3.5",
 };
 
-const PresenceIndicator: React.FC<Props> = ({ userId, className, size = "md", lastSeenAt, showLastSeen = false }) => {
+const PresenceIndicator: React.FC<Props> = ({ userId, className, size = "md", lastSeenAt, showLastSeen = false, statusMessage }) => {
   const { isOnline } = usePresence();
   const online = isOnline(userId);
 
-  const lastSeenText = !online && lastSeenAt
-    ? `Last seen ${formatDistanceToNow(new Date(lastSeenAt), { addSuffix: true })}`
-    : online ? "Online" : "Offline";
+  const statusText = statusMessage
+    ? statusMessage
+    : !online && lastSeenAt
+      ? `Last seen ${formatDistanceToNow(new Date(lastSeenAt), { addSuffix: true })}`
+      : online ? "Online" : "Offline";
+
+  const dotColor = statusMessage === "Busy" || statusMessage === "Do Not Disturb"
+    ? "bg-destructive"
+    : statusMessage === "Away"
+      ? "bg-yellow-500"
+      : online ? "bg-green-500" : "bg-muted-foreground/40";
 
   return (
     <span className={cn("inline-flex items-center gap-1.5", showLastSeen && "gap-1.5")}>
@@ -31,15 +40,15 @@ const PresenceIndicator: React.FC<Props> = ({ userId, className, size = "md", la
         className={cn(
           "rounded-full border-2 border-background block shrink-0",
           sizeMap[size],
-          online ? "bg-green-500" : "bg-muted-foreground/40",
+          dotColor,
           className
         )}
-        title={lastSeenText}
-        aria-label={lastSeenText}
+        title={statusText}
+        aria-label={statusText}
       />
-      {showLastSeen && !online && lastSeenAt && (
+      {showLastSeen && (
         <span className="text-xs text-muted-foreground whitespace-nowrap">
-          {lastSeenText}
+          {statusText}
         </span>
       )}
     </span>

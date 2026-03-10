@@ -193,6 +193,7 @@ export type Database = {
           lng: number | null
           rating_count: number
           reputation_score: number
+          status_message: string | null
           updated_at: string
           username: string | null
           verified: boolean
@@ -209,6 +210,7 @@ export type Database = {
           lng?: number | null
           rating_count?: number
           reputation_score?: number
+          status_message?: string | null
           updated_at?: string
           username?: string | null
           verified?: boolean
@@ -225,6 +227,7 @@ export type Database = {
           lng?: number | null
           rating_count?: number
           reputation_score?: number
+          status_message?: string | null
           updated_at?: string
           username?: string | null
           verified?: boolean

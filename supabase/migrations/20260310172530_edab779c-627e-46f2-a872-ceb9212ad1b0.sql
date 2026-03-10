@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN status_message text DEFAULT null;
