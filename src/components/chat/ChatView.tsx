@@ -17,6 +17,7 @@ interface Message {
   attachment_url: string | null;
   attachment_type: string | null;
   reply_to_id: string | null;
+  edited_at: string | null;
 }
 
 interface Props {
