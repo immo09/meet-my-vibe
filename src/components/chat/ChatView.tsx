@@ -538,7 +538,6 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
                           : msg.content}
                       </p>
                     )
-                    )
                   )}
                   {renderAttachment(msg)}
                   <div className={cn("flex items-center gap-1 mt-1", mine ? "justify-end" : "")}>
