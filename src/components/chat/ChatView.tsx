@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Paperclip, X, FileText, Check, CheckCheck, Reply, Trash2 } from "lucide-react";
+import { Send, Paperclip, X, FileText, Check, CheckCheck, Reply, Trash2, Pencil } from "lucide-react";
 import MessageReactions from "@/components/chat/MessageReactions";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -17,6 +17,7 @@ interface Message {
   attachment_url: string | null;
   attachment_type: string | null;
   reply_to_id: string | null;
+  edited_at: string | null;
 }
 
 interface Props {
@@ -38,6 +39,8 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [membersLastRead, setMembersLastRead] = useState<Record<string, string>>({});
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [editingMsg, setEditingMsg] = useState<Message | null>(null);
+  const [editText, setEditText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -61,7 +64,7 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     (async () => {
       const { data } = await supabase
         .from("messages")
-        .select("id, sender_id, content, created_at, attachment_url, attachment_type, reply_to_id")
+        .select("id, sender_id, content, created_at, attachment_url, attachment_type, reply_to_id, edited_at")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true })
         .limit(200);
@@ -106,6 +109,21 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
             .eq("conversation_id", conversationId)
             .eq("user_id", userId)
             .then();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updated = payload.new as Message;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updated.id ? updated : m))
+          );
         }
       )
       .subscribe();
@@ -272,6 +290,34 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     setSending(false);
   };
 
+  const startEditing = (msg: Message) => {
+    setEditingMsg(msg);
+    setEditText(msg.content);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingMsg) return;
+    const trimmed = editText.trim();
+    if (!trimmed || trimmed === editingMsg.content) {
+      setEditingMsg(null);
+      return;
+    }
+    const { error } = await supabase
+      .from("messages")
+      .update({ content: trimmed, edited_at: new Date().toISOString() })
+      .eq("id", editingMsg.id);
+    if (error) {
+      toast.error("Failed to edit message");
+    } else {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === editingMsg.id ? { ...m, content: trimmed, edited_at: new Date().toISOString() } : m
+        )
+      );
+    }
+    setEditingMsg(null);
+  };
+
   const handleDeleteMessage = async (messageId: string) => {
     if (!confirm("Delete this message? This can't be undone.")) return;
     const { error } = await supabase.from("messages").delete().eq("id", messageId);
@@ -394,14 +440,40 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
                   )}
                 >
                   {renderQuotedMessage(msg)}
-                  {msg.content && (
-                    <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                  {editingMsg?.id === msg.id ? (
+                    <div className="flex items-center gap-1">
+                      <Input
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); handleSaveEdit(); }
+                          if (e.key === "Escape") setEditingMsg(null);
+                        }}
+                        className="h-7 text-sm bg-background/20 border-none text-foreground"
+                        autoFocus
+                      />
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleSaveEdit}>
+                        <Check className="h-3 w-3" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingMsg(null)}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    msg.content && (
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                    )
                   )}
                   {renderAttachment(msg)}
                   <div className={cn("flex items-center gap-1 mt-1", mine ? "justify-end" : "")}>
                     <span className={cn("text-[10px]", mine ? "text-primary-foreground/60" : "text-muted-foreground")}>
                       {format(new Date(msg.created_at), "HH:mm")}
                     </span>
+                    {msg.edited_at && (
+                      <span className={cn("text-[10px] italic", mine ? "text-primary-foreground/50" : "text-muted-foreground/70")}>
+                        (edited)
+                      </span>
+                    )}
                     {mine && (
                       isRead
                         ? <CheckCheck className="h-3 w-3 text-primary-foreground/80" />
@@ -412,12 +484,19 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
                 {/* Reply & Delete buttons for own messages on right */}
                 {mine && (
                   <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
+                     <button
                       onClick={() => setReplyingTo(msg)}
                       className="p-1 rounded-full hover:bg-muted text-muted-foreground"
                       aria-label="Reply"
                     >
                       <Reply className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => startEditing(msg)}
+                      className="p-1 rounded-full hover:bg-muted text-muted-foreground"
+                      aria-label="Edit message"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleDeleteMessage(msg.id)}
