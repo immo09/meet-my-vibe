@@ -153,7 +153,7 @@ const Chat: React.FC = () => {
                 </h2>
                 {activeConvo?.type === "direct" && (() => {
                   const other = activeConvo.members.find((m) => m.user_id !== userId);
-                  return other ? <PresenceIndicator userId={other.user_id} size="sm" lastSeenAt={other.last_seen_at} showLastSeen /> : null;
+                  return other ? <PresenceIndicator userId={other.user_id} size="sm" lastSeenAt={other.last_seen_at} statusMessage={other.status_message} showLastSeen /> : null;
                 })()}
               </div>
             </header>
