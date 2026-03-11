@@ -35,7 +35,7 @@ const Profile: React.FC = () => {
 
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, username, bio, avatar_url")
+        .select("display_name, username, bio, avatar_url, status_message")
         .eq("id", user.id)
         .single();
 
@@ -44,7 +44,7 @@ const Profile: React.FC = () => {
         setUsername(data.username ?? "");
         setBio(data.bio ?? "");
         setAvatarUrl(data.avatar_url);
-        setStatusMessage((data as any).status_message ?? "");
+        setStatusMessage(data.status_message ?? "");
       }
       setLoading(false);
     })();
@@ -106,7 +106,7 @@ const Profile: React.FC = () => {
           username: username || null,
           bio: bio || null,
           status_message: statusMessage || null,
-        } as any)
+        })
         .eq("id", userId);
       if (error) throw error;
       toast({ title: "Profile saved" });
