@@ -44,7 +44,7 @@ const Profile: React.FC = () => {
         setUsername(data.username ?? "");
         setBio(data.bio ?? "");
         setAvatarUrl(data.avatar_url);
-        setStatusMessage((data as any).status_message ?? "");
+        setStatusMessage(data.status_message ?? "");
       }
       setLoading(false);
     })();
