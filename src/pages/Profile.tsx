@@ -35,7 +35,7 @@ const Profile: React.FC = () => {
 
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, username, bio, avatar_url")
+        .select("display_name, username, bio, avatar_url, status_message")
         .eq("id", user.id)
         .single();
 
