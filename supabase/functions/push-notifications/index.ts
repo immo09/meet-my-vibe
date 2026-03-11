@@ -17,10 +17,8 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  const url = new URL(req.url);
-
   try {
-    // GET — return VAPID public key (generate & store if first time)
+    // GET — return VAPID public key (public, no auth needed)
     if (req.method === "GET") {
       let { data: keys } = await supabaseAdmin
         .from("vapid_keys")
@@ -29,15 +27,12 @@ Deno.serve(async (req) => {
         .single();
 
       if (!keys) {
-        // Generate new VAPID key pair
         const vapidKeys = webpush.generateVAPIDKeys();
-
         await supabaseAdmin.from("vapid_keys").insert({
           id: 1,
           public_key: vapidKeys.publicKey,
           private_key: vapidKeys.privateKey,
         });
-
         keys = { public_key: vapidKeys.publicKey };
       }
 
@@ -46,23 +41,42 @@ Deno.serve(async (req) => {
       });
     }
 
-    // POST — subscribe or send
+    // POST — require JWT authentication
     if (req.method === "POST") {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const token = authHeader.replace("Bearer ", "");
+      const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
+      if (authError || !authData?.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const authenticatedUserId = authData.user.id;
       const body = await req.json();
 
       // Store push subscription
       if (body.action === "subscribe") {
-        const { user_id, subscription } = body;
-        if (!user_id || !subscription?.endpoint) {
+        const { subscription } = body;
+        if (!subscription?.endpoint) {
           return new Response(JSON.stringify({ error: "Missing fields" }), {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
+        // Always use the authenticated user's ID, ignore body.user_id
         await supabaseAdmin.from("push_subscriptions").upsert(
           {
-            user_id,
+            user_id: authenticatedUserId,
             endpoint: subscription.endpoint,
             p256dh: subscription.keys.p256dh,
             auth: subscription.keys.auth,
@@ -77,9 +91,12 @@ Deno.serve(async (req) => {
 
       // Send push to conversation members (except sender)
       if (body.action === "send") {
-        const { conversation_id, sender_id, sender_name, content } = body;
+        const { conversation_id, sender_name, content } = body;
 
-        // Get VAPID keys first
+        // Enforce sender_id from JWT
+        const sender_id = authenticatedUserId;
+
+        // Get VAPID keys
         const { data: vapidKeys } = await supabaseAdmin
           .from("vapid_keys")
           .select("public_key, private_key")
@@ -99,7 +116,6 @@ Deno.serve(async (req) => {
           vapidKeys.private_key
         );
 
-        // Get conversation members except sender
         const { data: members } = await supabaseAdmin
           .from("conversation_members")
           .select("user_id")
@@ -153,7 +169,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Clean up expired subscriptions
         if (expiredEndpoints.length > 0) {
           await supabaseAdmin
             .from("push_subscriptions")
