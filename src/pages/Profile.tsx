@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Camera, Loader2, ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AppNavigation from "@/components/AppNavigation";
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
@@ -211,6 +212,7 @@ const Profile: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      <AppNavigation />
     </main>
   );
 };

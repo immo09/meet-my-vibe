@@ -20,22 +20,10 @@ import { useStartDm } from "@/hooks/use-start-dm";
 import AppNavigation from "@/components/AppNavigation";
 import PresenceIndicator from "@/components/PresenceIndicator";
 
-// Types
 type AnswerOption = { text: string; traits: string[] };
 interface Question {
   question: string;
   answers: AnswerOption[];
-}
-
-interface Person {
-  name: string;
-  age: number;
-  distance: string;
-  avatar: string;
-  bio: string;
-  traits: string[];
-  interests: string[];
-  compatibility: number;
 }
 
 const personalityQuestions: Question[] = [
@@ -131,106 +119,54 @@ const personalityQuestions: Question[] = [
   },
 ];
 
-const mockPeople: Person[] = [
-  {
-    name: "Sarah",
-    age: 28,
-    distance: "0.3 mi",
-    avatar: "S",
-    bio: "Digital nomad who loves coffee shops and weekend hikes",
-    traits: ["adventurous", "outgoing", "creative", "coffee-lover"],
-    interests: ["☕ Coffee", "🥾 Hiking", "📸 Photography", "✈️ Travel"],
-    compatibility: 92,
-  },
-  {
-    name: "Mike",
-    age: 25,
-    distance: "0.5 mi",
-    avatar: "M",
-    bio: "Local foodie and music enthusiast. Always up for concerts!",
-    traits: ["foodie", "music-lover", "social", "energetic"],
-    interests: ["🎵 Music", "🍕 Food", "🎸 Guitar", "🍺 Craft Beer"],
-    compatibility: 88,
-  },
-  {
-    name: "Emma",
-    age: 30,
-    distance: "0.7 mi",
-    avatar: "E",
-    bio: "Yoga instructor and nature lover. Let's explore the outdoors!",
-    traits: ["nature-lover", "calm", "active", "mindful"],
-    interests: ["🧘 Yoga", "🌿 Nature", "📚 Reading", "🥗 Healthy Food"],
-    compatibility: 85,
-  },
-  {
-    name: "David",
-    age: 26,
-    distance: "0.8 mi",
-    avatar: "D",
-    bio: "Tech guy who loves board games and trying new restaurants",
-    traits: ["analytical", "thoughtful", "social", "curious"],
-    interests: ["🎲 Board Games", "💻 Tech", "🍜 Food", "🧩 Puzzles"],
-    compatibility: 83,
-  },
-  {
-    name: "Lisa",
-    age: 29,
-    distance: "1.1 mi",
-    avatar: "L",
-    bio: "Artist and museum enthusiast. Let's check out galleries!",
-    traits: ["creative", "cultural", "thoughtful", "artistic"],
-    interests: ["🎨 Art", "🏛️ Museums", "📖 Books", "🎭 Theater"],
-    compatibility: 79,
-  },
-  {
-    name: "Jake",
-    age: 24,
-    distance: "1.2 mi",
-    avatar: "J",
-    bio: "Fitness enthusiast and adventure seeker. Always ready for action!",
-    traits: ["active", "energetic", "adventurous", "determined"],
-    interests: ["🏋️ Fitness", "🏃 Running", "🚴 Cycling", "⛰️ Climbing"],
-    compatibility: 76,
-  },
-];
+const QUIZ_DONE_KEY = "mmv_quiz_done";
 
 const Index = () => {
+  const quizDone = localStorage.getItem(QUIZ_DONE_KEY) === "1";
   type Step = "welcome" | "personality" | "main";
-  const [step, setStep] = useState<Step>("welcome");
+  const [step, setStep] = useState<Step>(quizDone ? "main" : "welcome");
   const [currentQ, setCurrentQ] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [answers, setAnswers] = useState<AnswerOption[]>([]);
   const [traits, setTraits] = useState<Record<string, number>>({});
 
-  const [hangoutOpen, setHangoutOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [hangoutMsg, setHangoutMsg] = useState("");
-  const [hangoutCount, setHangoutCount] = useState(3);
-const [rateTarget, setRateTarget] = useState<{ id: string; name: string } | null>(null);
-const { startDm, starting } = useStartDm();
-const [profiles, setProfiles] = useState<any[]>([]);
-const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [rateTarget, setRateTarget] = useState<{ id: string; name: string } | null>(null);
+  const { startDm, starting } = useStartDm();
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [myProfile, setMyProfile] = useState<any>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-useEffect(() => {
-  (async () => {
-    setLoadingProfiles(true);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, display_name, bio, avatar_url, verified, reputation_score, rating_count')
-      .order('verified', { ascending: false })
-      .order('reputation_score', { ascending: false })
-      .limit(20);
-    if (!error) setProfiles(data ?? []);
-    setLoadingProfiles(false);
-  })();
-}, []);
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserId(user.id);
 
-const totalQ = personalityQuestions.length;
-const progress = Math.round(((currentQ + 1) / totalQ) * 100);
-  const sortedPeople = useMemo(() => {
-    return [...mockPeople].sort((a, b) => b.compatibility - a.compatibility);
+      const [profilesRes, myRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, display_name, bio, avatar_url, verified, reputation_score, rating_count")
+          .neq("id", user.id)
+          .order("verified", { ascending: false })
+          .order("reputation_score", { ascending: false })
+          .limit(20),
+        supabase
+          .from("profiles")
+          .select("display_name, avatar_url, bio, status_message")
+          .eq("id", user.id)
+          .single(),
+      ]);
+
+      setLoadingProfiles(false);
+      if (!profilesRes.error) setProfiles(profilesRes.data ?? []);
+      if (!myRes.error && myRes.data) setMyProfile(myRes.data);
+    })();
   }, []);
+
+  const totalQ = personalityQuestions.length;
+  const progress = Math.round(((currentQ + 1) / totalQ) * 100);
 
   const startTest = () => setStep("personality");
 
@@ -245,46 +181,32 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
       setCurrentQ((q) => q + 1);
       setSelectedIndex(null);
     } else {
-      // compute traits
       const t: Record<string, number> = {};
       nextAnswers.forEach((a) => a.traits.forEach((tr) => (t[tr] = (t[tr] || 0) + 1)));
       setTraits(t);
+      localStorage.setItem(QUIZ_DONE_KEY, "1");
       setStep("main");
     }
   };
 
-  const openHangout = (person: Person) => {
-    setSelectedPerson(person);
-    setHangoutOpen(true);
-  };
-
-  const sendHangout = () => {
-    // Increment count and close
-    setHangoutCount((c) => c + 1);
-    setHangoutOpen(false);
-    setHangoutMsg("");
-    // Use Sonner toast (Toaster is already mounted in App)
-    import("sonner").then(({ toast }) => {
-      toast.success("Hangout request sent!");
-    });
-  };
-
-  const topTraits = useMemo(() =>
-    Object.entries(traits)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([k]) => k),
-  [traits]);
+  const topTraits = useMemo(
+    () =>
+      Object.entries(traits)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([k]) => k),
+    [traits]
+  );
 
   const canonical = typeof window !== "undefined" ? window.location.href : "/";
 
   return (
     <>
       <Helmet>
-        <title>Hangout — Find Your Perfect Match Nearby</title>
+        <title>Meet My Vibe — Find Your Perfect Match Nearby</title>
         <meta name="description" content="Find your perfect hangout match nearby with personality-based matching and interests." />
         <link rel="canonical" href={canonical} />
-        <meta property="og:title" content="Hangout — Find Your Perfect Match" />
+        <meta property="og:title" content="Meet My Vibe — Find Your Perfect Match" />
         <meta property="og:description" content="Discover compatible people nearby and plan fun hangouts." />
       </Helmet>
 
@@ -292,7 +214,7 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
         <section className="min-h-screen bg-gradient-primary flex items-center justify-center p-6">
           <div className="text-center text-primary-foreground max-w-xl">
             <div className="mb-10">
-              <h1 className="text-5xl font-bold mb-4">🎯 Hangout</h1>
+              <h1 className="text-5xl font-bold mb-4">🎯 Meet My Vibe</h1>
               <p className="text-lg/7 opacity-90">Find your perfect match nearby and hang out!</p>
             </div>
             <Button size="lg" variant="hero" onClick={startTest}>
@@ -315,7 +237,7 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
                 />
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Question <span>{currentQ + 1}</span> of <span>{totalQ}</span>
+                Question {currentQ + 1} of {totalQ}
               </p>
             </div>
 
@@ -325,10 +247,16 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
                   {personalityQuestions[currentQ].question}
                 </h3>
 
-                <RadioGroup value={selectedIndex?.toString() ?? ""} onValueChange={(val) => setSelectedIndex(parseInt(val))}>
+                <RadioGroup
+                  value={selectedIndex?.toString() ?? ""}
+                  onValueChange={(val) => setSelectedIndex(parseInt(val))}
+                >
                   <div className="space-y-3">
                     {personalityQuestions[currentQ].answers.map((a, idx) => (
-                      <label key={idx} className="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
+                      <label
+                        key={idx}
+                        className="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
                         <RadioGroupItem value={idx.toString()} />
                         <span>{a.text}</span>
                       </label>
@@ -338,7 +266,7 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
 
                 <div className="text-center mt-6">
                   <Button size="lg" className="min-w-40" onClick={onNext} disabled={selectedIndex == null}>
-                    Next
+                    {currentQ + 1 === totalQ ? "Finish" : "Next"}
                   </Button>
                 </div>
               </CardContent>
@@ -348,141 +276,95 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
       )}
 
       {step === "main" && (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background flex flex-col">
           <header className="bg-card shadow-sm border-b">
             <div className="max-w-4xl mx-auto px-4 py-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold">🎯 Hangout</h1>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm">
-                    <MapPin className="h-4 w-4" /> San Francisco
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Link to="/nearby">
-                    <Button variant="secondary">Nearby</Button>
-                  </Link>
-                  <Button variant="secondary" size="icon" onClick={() => setProfileOpen(true)} aria-label="Open profile">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </div>
+                <h1 className="text-2xl font-bold">🎯 Meet My Vibe</h1>
+                <Button variant="secondary" size="icon" onClick={() => setProfileOpen(true)} aria-label="Open profile">
+                  <User className="h-5 w-5" />
+                </Button>
               </div>
             </div>
           </header>
 
-          <main className="max-w-4xl mx-auto p-4">
-            <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <Card className="text-center">
-                <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-primary">{mockPeople.length}</div>
-                  <div className="text-sm text-muted-foreground">Nearby</div>
-                </CardContent>
-              </Card>
-              <Card className="text-center">
-                <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-primary">
-                    {Math.round(sortedPeople.reduce((s, p) => s + p.compatibility, 0) / sortedPeople.length)}%
-                  </div>
-                  <div className="text-sm text-muted-foreground">Avg Match</div>
-                </CardContent>
-              </Card>
-              <Card className="text-center">
-                <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-primary">{hangoutCount}</div>
-                  <div className="text-sm text-muted-foreground">Hangouts</div>
-                </CardContent>
-              </Card>
-            </section>
-
+          <main className="flex-1 max-w-4xl mx-auto p-4 w-full">
             <section className="space-y-4">
-              {profiles.length > 0 ? (
-                profiles.map((p) => (
-                  <Card key={p.id} className="card-hover">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            {p.avatar_url ? (
-                              <img src={p.avatar_url} alt={`${p.display_name || 'User'} avatar`} className="w-16 h-16 rounded-full object-cover" loading="lazy" />
-                            ) : (
-                              <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground grid place-items-center text-xl font-bold">
-                                {(p.display_name || 'U').charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                            <PresenceIndicator userId={p.id} size="sm" className="absolute -bottom-0.5 -right-0.5" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-semibold inline-flex items-center gap-2">
-                              {p.display_name || 'Anonymous'}
-                              {p.verified && <Badge variant="secondary" className="rounded-full">Verified</Badge>}
-                            </h3>
-                            <p className="text-muted-foreground inline-flex items-center gap-1">
-                              <MapPin className="h-4 w-4" /> Nearby
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">{(p.reputation_score ?? 0).toFixed(1)}</div>
-                          <div className="text-sm text-muted-foreground">reputation · {p.rating_count ?? 0} ratings</div>
-                        </div>
-                      </div>
-
-                      {p.bio && <p className="text-muted-foreground mb-4">{p.bio}</p>}
-
-                      <div className="flex gap-2">
-                        <Button variant="hero" className="flex-1" onClick={() => startDm(p.id)} disabled={starting === p.id}>
-                          {starting === p.id ? "Opening…" : "👋 Say hi"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => setRateTarget({ id: p.id, name: p.display_name || "Anonymous" })}
-                        >
-                          ⭐ Rate
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                sortedPeople.map((person) => (
-                  <Card key={person.name} className="card-hover">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground grid place-items-center text-xl font-bold">
-                            {person.avatar}
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-semibold">{person.name}, {person.age}</h3>
-                            <p className="text-muted-foreground inline-flex items-center gap-1">
-                              <MapPin className="h-4 w-4" /> {person.distance} away
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">{Math.round(person.compatibility)}%</div>
-                          <div className="text-sm text-muted-foreground">match</div>
-                        </div>
-                      </div>
-
-                      <p className="text-muted-foreground mb-4">{person.bio}</p>
-
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {person.interests.map((interest, i) => (
-                          <Badge key={i} variant="secondary" className="rounded-full">{interest}</Badge>
-                        ))}
-                      </div>
-
-                      <Button variant="hero" className="w-full" onClick={() => openHangout(person)}>
-                        💬 Ask to Hangout
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))
+              {loadingProfiles && (
+                <p className="text-center text-muted-foreground py-8">Loading people…</p>
               )}
+
+              {!loadingProfiles && profiles.length === 0 && (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <p className="text-muted-foreground">No people nearby yet. Share your location on the <Link to="/nearby" className="text-primary underline">Nearby</Link> page to be discovered!</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {profiles.map((p) => (
+                <Card key={p.id} className="card-hover">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          {p.avatar_url ? (
+                            <img
+                              src={p.avatar_url}
+                              alt={`${p.display_name || "User"} avatar`}
+                              className="w-16 h-16 rounded-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground grid place-items-center text-xl font-bold">
+                              {(p.display_name || "U").charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <PresenceIndicator userId={p.id} size="sm" className="absolute -bottom-0.5 -right-0.5" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-semibold inline-flex items-center gap-2">
+                            {p.display_name || "Anonymous"}
+                            {p.verified && (
+                              <Badge variant="secondary" className="rounded-full">
+                                Verified
+                              </Badge>
+                            )}
+                          </h3>
+                          <p className="text-muted-foreground inline-flex items-center gap-1">
+                            <MapPin className="h-4 w-4" /> Nearby
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-primary">
+                          {(p.reputation_score ?? 0).toFixed(1)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          reputation · {p.rating_count ?? 0} ratings
+                        </div>
+                      </div>
+                    </div>
+
+                    {p.bio && <p className="text-muted-foreground mb-4">{p.bio}</p>}
+
+                    <div className="flex gap-2">
+                      <Button variant="hero" className="flex-1" onClick={() => startDm(p.id)} disabled={starting === p.id}>
+                        {starting === p.id ? "Opening…" : "👋 Say hi"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setRateTarget({ id: p.id, name: p.display_name || "Anonymous" })}
+                      >
+                        ⭐ Rate
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </section>
-            
+
             <footer className="mt-12 pt-8 border-t border-border text-center">
               <div className="flex justify-center gap-6 text-sm text-muted-foreground">
                 <Link to="/privacy" className="hover:text-foreground transition-colors">
@@ -494,6 +376,7 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
               </div>
             </footer>
           </main>
+
           <AppNavigation />
         </div>
       )}
@@ -506,11 +389,22 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
           </DialogHeader>
 
           <div className="text-center">
-            <div className="w-20 h-20 bg-primary rounded-full grid place-items-center text-primary-foreground text-2xl font-bold mx-auto mb-3">
-              A
-            </div>
-            <h4 className="text-lg font-semibold">Alex (You)</h4>
-            <p className="text-muted-foreground">Adventure seeker & coffee lover</p>
+            {myProfile?.avatar_url ? (
+              <img
+                src={myProfile.avatar_url}
+                alt="Your avatar"
+                className="w-20 h-20 rounded-full object-cover mx-auto mb-3"
+              />
+            ) : (
+              <div className="w-20 h-20 bg-primary rounded-full grid place-items-center text-primary-foreground text-2xl font-bold mx-auto mb-3">
+                {(myProfile?.display_name || "U").charAt(0).toUpperCase()}
+              </div>
+            )}
+            <h4 className="text-lg font-semibold">{myProfile?.display_name || "Anonymous"}</h4>
+            {myProfile?.bio && <p className="text-muted-foreground">{myProfile.bio}</p>}
+            {myProfile?.status_message && (
+              <Badge variant="outline" className="mt-2">{myProfile.status_message}</Badge>
+            )}
           </div>
 
           <div className="space-y-4 mt-4">
@@ -519,65 +413,27 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
               <div className="flex flex-wrap gap-2">
                 {topTraits.length ? (
                   topTraits.map((t) => (
-                    <Badge key={t} className="rounded-full" variant="outline">{t}</Badge>
+                    <Badge key={t} className="rounded-full" variant="outline">
+                      {t}
+                    </Badge>
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground">Complete the personality test to see your traits.</p>
                 )}
               </div>
             </div>
-            <div>
-              <h5 className="font-semibold mb-2">Interests</h5>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  "☕ Coffee",
-                  "🏃 Running",
-                  "🎵 Music",
-                  "🍕 Food",
-                ].map((i) => (
-                  <Badge key={i} variant="secondary" className="rounded-full">{i}</Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={hangoutOpen} onOpenChange={setHangoutOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Send Hangout Request</DialogTitle>
-          </DialogHeader>
-
-          {selectedPerson && (
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-primary rounded-full grid place-items-center text-primary-foreground font-bold">
-                {selectedPerson.avatar}
-              </div>
-              <div>
-                <h4 className="font-semibold">{selectedPerson.name}</h4>
-                <p className="text-sm text-muted-foreground">{Math.round(selectedPerson.compatibility)}% match</p>
-              </div>
-            </div>
-          )}
-
-          <Textarea
-            value={hangoutMsg}
-            onChange={(e) => setHangoutMsg(e.target.value)}
-            rows={4}
-            placeholder="Hey! Want to grab coffee or explore the city together?"
-          />
-
-          <div className="flex gap-3 mt-4">
-            <Button variant="secondary" className="flex-1" onClick={() => setHangoutOpen(false)}>Cancel</Button>
-            <Button className="flex-1" onClick={sendHangout}>Send Request</Button>
+            <Link to="/profile">
+              <Button variant="outline" className="w-full mt-2">Edit Profile</Button>
+            </Link>
           </div>
         </DialogContent>
       </Dialog>
 
       <RateUserDialog
         open={!!rateTarget}
-        onOpenChange={(open) => { if (!open) setRateTarget(null); }}
+        onOpenChange={(open) => {
+          if (!open) setRateTarget(null);
+        }}
         rateeId={rateTarget?.id ?? ""}
         rateeName={rateTarget?.name ?? ""}
         onRated={() => {
@@ -585,6 +441,7 @@ const progress = Math.round(((currentQ + 1) / totalQ) * 100);
             const { data } = await supabase
               .from("profiles")
               .select("id, display_name, bio, avatar_url, verified, reputation_score, rating_count")
+              .neq("id", userId ?? "")
               .order("verified", { ascending: false })
               .order("reputation_score", { ascending: false })
               .limit(20);
