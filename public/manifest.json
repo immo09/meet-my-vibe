@@ -1,11 +1,11 @@
 {
-  "name": "Meet My Vibe",
-  "short_name": "MeetMyVibe",
-  "description": "Find your perfect hangout match nearby with personality-based matching.",
+  "name": "Hangz",
+  "short_name": "Hangz",
+  "description": "Find your people nearby with personality-based matching.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#7c3aed",
+  "background_color": "#faf8f5",
+  "theme_color": "#e8590c",
   "orientation": "portrait",
   "icons": [
     {

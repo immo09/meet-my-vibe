@@ -1,5 +1,5 @@
 // Service Worker for offline functionality + push notifications
-const CACHE_NAME = 'meet-my-vibe-v2';
+const CACHE_NAME = 'hangz-v1';
 const urlsToCache = [
   '/',
   '/manifest.json'
