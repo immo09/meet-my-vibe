@@ -211,6 +211,7 @@ const Profile: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      <AppNavigation />
     </main>
   );
 };
