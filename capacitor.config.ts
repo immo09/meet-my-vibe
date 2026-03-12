@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'app.lovable.6d38a22226be4ad48b1d86c6ff8cca7c',
-  appName: 'meet-my-vibe',
+  appName: 'Hangz',
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {
