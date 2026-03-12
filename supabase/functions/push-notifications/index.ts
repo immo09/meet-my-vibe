@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
         }
 
         webpush.setVapidDetails(
-          "mailto:noreply@meet-my-vibe.lovable.app",
+          "mailto:noreply@hangz.app",
           vapidKeys.public_key,
           vapidKeys.private_key
         );

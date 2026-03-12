@@ -10,8 +10,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { MapPin, User } from "lucide-react";
+import { MapPin, User, Sparkles, ArrowRight, Star } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -119,7 +118,7 @@ const personalityQuestions: Question[] = [
   },
 ];
 
-const QUIZ_DONE_KEY = "mmv_quiz_done";
+const QUIZ_DONE_KEY = "hangz_quiz_done";
 
 const Index = () => {
   const quizDone = localStorage.getItem(QUIZ_DONE_KEY) === "1";
@@ -203,47 +202,68 @@ const Index = () => {
   return (
     <>
       <Helmet>
-        <title>Meet My Vibe — Find Your Perfect Match Nearby</title>
-        <meta name="description" content="Find your perfect hangout match nearby with personality-based matching and interests." />
+        <title>Hangz — Find Your People Nearby</title>
+        <meta name="description" content="Discover compatible people nearby with personality-based matching." />
         <link rel="canonical" href={canonical} />
-        <meta property="og:title" content="Meet My Vibe — Find Your Perfect Match" />
+        <meta property="og:title" content="Hangz — Find Your People Nearby" />
         <meta property="og:description" content="Discover compatible people nearby and plan fun hangouts." />
       </Helmet>
 
       {step === "welcome" && (
-        <section className="min-h-screen bg-gradient-primary flex items-center justify-center p-6">
-          <div className="text-center text-primary-foreground max-w-xl">
-            <div className="mb-10">
-              <h1 className="text-5xl font-bold mb-4">🎯 Meet My Vibe</h1>
-              <p className="text-lg/7 opacity-90">Find your perfect match nearby and hang out!</p>
+        <section className="min-h-screen bg-gradient-primary flex items-center justify-center p-6 relative overflow-hidden">
+          {/* Decorative circles */}
+          <div className="absolute top-[-10%] right-[-5%] w-80 h-80 rounded-full bg-primary-foreground/5 blur-3xl" />
+          <div className="absolute bottom-[-15%] left-[-10%] w-96 h-96 rounded-full bg-primary-foreground/5 blur-3xl" />
+          
+          <div className="text-center text-primary-foreground max-w-xl relative z-10 animate-fade-up">
+            <div className="mb-12">
+              <div className="inline-flex items-center gap-2 bg-primary-foreground/15 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+                <Sparkles className="h-4 w-4" />
+                Personality-powered matching
+              </div>
+              <h1 className="text-6xl sm:text-7xl font-bold font-display tracking-tight mb-4">
+                Hangz
+              </h1>
+              <p className="text-xl opacity-90 max-w-md mx-auto leading-relaxed">
+                Find your people nearby. Match by personality, not just proximity.
+              </p>
             </div>
-            <Button size="lg" variant="hero" onClick={startTest}>
+            <Button 
+              size="lg" 
+              onClick={startTest}
+              className="bg-primary-foreground text-foreground hover:bg-primary-foreground/90 rounded-full px-8 py-6 text-lg font-semibold shadow-elegant gap-2 group"
+            >
               Get Started
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
           </div>
         </section>
       )}
 
       {step === "personality" && (
-        <main className="min-h-screen bg-background">
+        <main className="min-h-screen bg-gradient-subtle">
           <div className="max-w-2xl mx-auto p-6">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2">Personality Profile</h2>
-              <p className="text-muted-foreground">Help us find your perfect hangout matches</p>
-              <div className="mt-4 bg-muted rounded-full h-2">
+            <div className="text-center mb-10 animate-fade-up">
+              <div className="inline-flex items-center gap-2 bg-accent rounded-full px-4 py-1.5 text-sm font-medium text-accent-foreground mb-4">
+                <Sparkles className="h-4 w-4" />
+                Personality Quiz
+              </div>
+              <h2 className="text-3xl font-bold font-display mb-2">Tell us about you</h2>
+              <p className="text-muted-foreground">We'll match you with compatible people</p>
+              <div className="mt-6 bg-border rounded-full h-1.5 max-w-xs mx-auto">
                 <div
-                  className="bg-gradient-primary h-2 rounded-full transition-all"
+                  className="bg-gradient-primary h-1.5 rounded-full transition-all duration-500"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Question {currentQ + 1} of {totalQ}
+              <p className="text-xs text-muted-foreground mt-2">
+                {currentQ + 1} of {totalQ}
               </p>
             </div>
 
-            <Card className="shadow-sm">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-6">
+            <Card className="shadow-card border-0 rounded-2xl animate-scale-in">
+              <CardContent className="p-8">
+                <h3 className="text-xl font-semibold font-display mb-6">
                   {personalityQuestions[currentQ].question}
                 </h3>
 
@@ -255,18 +275,28 @@ const Index = () => {
                     {personalityQuestions[currentQ].answers.map((a, idx) => (
                       <label
                         key={idx}
-                        className="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors"
+                        className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
+                          selectedIndex === idx
+                            ? "border-primary bg-accent shadow-sm"
+                            : "border-border hover:border-primary/30 hover:bg-muted/50"
+                        }`}
                       >
                         <RadioGroupItem value={idx.toString()} />
-                        <span>{a.text}</span>
+                        <span className="text-sm">{a.text}</span>
                       </label>
                     ))}
                   </div>
                 </RadioGroup>
 
-                <div className="text-center mt-6">
-                  <Button size="lg" className="min-w-40" onClick={onNext} disabled={selectedIndex == null}>
-                    {currentQ + 1 === totalQ ? "Finish" : "Next"}
+                <div className="text-center mt-8">
+                  <Button 
+                    size="lg" 
+                    className="min-w-44 rounded-full" 
+                    onClick={onNext} 
+                    disabled={selectedIndex == null}
+                  >
+                    {currentQ + 1 === totalQ ? "See Results" : "Continue"}
+                    <ArrowRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
               </CardContent>
@@ -277,12 +307,22 @@ const Index = () => {
 
       {step === "main" && (
         <div className="min-h-screen bg-background flex flex-col">
-          <header className="bg-card shadow-sm border-b">
-            <div className="max-w-4xl mx-auto px-4 py-4">
+          <header className="glass border-b sticky top-0 z-40">
+            <div className="max-w-4xl mx-auto px-4 py-3">
               <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">🎯 Meet My Vibe</h1>
-                <Button variant="secondary" size="icon" onClick={() => setProfileOpen(true)} aria-label="Open profile">
-                  <User className="h-5 w-5" />
+                <h1 className="text-2xl font-bold font-display text-gradient">Hangz</h1>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setProfileOpen(true)} 
+                  aria-label="Open profile"
+                  className="rounded-full"
+                >
+                  {myProfile?.avatar_url ? (
+                    <img src={myProfile.avatar_url} alt="You" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <User className="h-5 w-5" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -291,19 +331,29 @@ const Index = () => {
           <main className="flex-1 max-w-4xl mx-auto p-4 w-full">
             <section className="space-y-4">
               {loadingProfiles && (
-                <p className="text-center text-muted-foreground py-8">Loading people…</p>
+                <div className="flex items-center justify-center py-16">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+                </div>
               )}
 
               {!loadingProfiles && profiles.length === 0 && (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">No people nearby yet. Share your location on the <Link to="/nearby" className="text-primary underline">Nearby</Link> page to be discovered!</p>
+                <Card className="border-0 shadow-card rounded-2xl">
+                  <CardContent className="p-10 text-center">
+                    <div className="w-16 h-16 rounded-full bg-accent grid place-items-center mx-auto mb-4">
+                      <MapPin className="h-7 w-7 text-accent-foreground" />
+                    </div>
+                    <h3 className="font-semibold font-display text-lg mb-2">No one nearby yet</h3>
+                    <p className="text-muted-foreground text-sm">Share your location on the <Link to="/nearby" className="text-primary font-medium hover:underline">Nearby</Link> page to be discovered!</p>
                   </CardContent>
                 </Card>
               )}
 
-              {profiles.map((p) => (
-                <Card key={p.id} className="card-hover">
+              {profiles.map((p, i) => (
+                <Card 
+                  key={p.id} 
+                  className="card-hover border-0 rounded-2xl"
+                  style={{ animationDelay: `${i * 80}ms` }}
+                >
                   <CardContent className="p-6">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                       <div className="flex items-center gap-4">
@@ -312,49 +362,55 @@ const Index = () => {
                             <img
                               src={p.avatar_url}
                               alt={`${p.display_name || "User"} avatar`}
-                              className="w-16 h-16 rounded-full object-cover"
+                              className="w-14 h-14 rounded-2xl object-cover"
                               loading="lazy"
                             />
                           ) : (
-                            <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground grid place-items-center text-xl font-bold">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-primary text-primary-foreground grid place-items-center text-lg font-bold">
                               {(p.display_name || "U").charAt(0).toUpperCase()}
                             </div>
                           )}
                           <PresenceIndicator userId={p.id} size="sm" className="absolute -bottom-0.5 -right-0.5" />
                         </div>
                         <div>
-                          <h3 className="text-xl font-semibold inline-flex items-center gap-2">
+                          <h3 className="text-lg font-semibold font-display inline-flex items-center gap-2">
                             {p.display_name || "Anonymous"}
                             {p.verified && (
-                              <Badge variant="secondary" className="rounded-full">
-                                Verified
+                              <Badge className="rounded-full bg-accent text-accent-foreground text-xs border-0">
+                                ✓ Verified
                               </Badge>
                             )}
                           </h3>
-                          <p className="text-muted-foreground inline-flex items-center gap-1">
-                            <MapPin className="h-4 w-4" /> Nearby
+                          <p className="text-muted-foreground text-sm inline-flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5" /> Nearby
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">
+                      <div className="flex items-center gap-1.5 text-primary">
+                        <Star className="h-4 w-4 fill-current" />
+                        <span className="text-lg font-bold font-display">
                           {(p.reputation_score ?? 0).toFixed(1)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          reputation · {p.rating_count ?? 0} ratings
-                        </div>
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-1">
+                          ({p.rating_count ?? 0})
+                        </span>
                       </div>
                     </div>
 
-                    {p.bio && <p className="text-muted-foreground mb-4">{p.bio}</p>}
+                    {p.bio && <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{p.bio}</p>}
 
                     <div className="flex gap-2">
-                      <Button variant="hero" className="flex-1" onClick={() => startDm(p.id)} disabled={starting === p.id}>
+                      <Button 
+                        variant="hero" 
+                        className="flex-1 rounded-xl" 
+                        onClick={() => startDm(p.id)} 
+                        disabled={starting === p.id}
+                      >
                         {starting === p.id ? "Opening…" : "👋 Say hi"}
                       </Button>
                       <Button
                         variant="outline"
-                        className="flex-1"
+                        className="flex-1 rounded-xl"
                         onClick={() => setRateTarget({ id: p.id, name: p.display_name || "Anonymous" })}
                       >
                         ⭐ Rate
@@ -365,13 +421,14 @@ const Index = () => {
               ))}
             </section>
 
-            <footer className="mt-12 pt-8 border-t border-border text-center">
-              <div className="flex justify-center gap-6 text-sm text-muted-foreground">
+            <footer className="mt-16 pt-8 border-t border-border text-center pb-4">
+              <p className="text-xs text-muted-foreground mb-3 font-display font-medium">Hangz</p>
+              <div className="flex justify-center gap-6 text-xs text-muted-foreground">
                 <Link to="/privacy" className="hover:text-foreground transition-colors">
-                  Privacy Policy
+                  Privacy
                 </Link>
                 <Link to="/terms" className="hover:text-foreground transition-colors">
-                  Terms of Service
+                  Terms
                 </Link>
               </div>
             </footer>
@@ -382,10 +439,10 @@ const Index = () => {
       )}
 
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Your Profile</DialogTitle>
-            <DialogDescription>Overview of your personality and interests</DialogDescription>
+            <DialogTitle className="font-display">Your Profile</DialogTitle>
+            <DialogDescription>Your personality and interests</DialogDescription>
           </DialogHeader>
 
           <div className="text-center">
@@ -393,27 +450,27 @@ const Index = () => {
               <img
                 src={myProfile.avatar_url}
                 alt="Your avatar"
-                className="w-20 h-20 rounded-full object-cover mx-auto mb-3"
+                className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3"
               />
             ) : (
-              <div className="w-20 h-20 bg-primary rounded-full grid place-items-center text-primary-foreground text-2xl font-bold mx-auto mb-3">
+              <div className="w-20 h-20 bg-gradient-primary rounded-2xl grid place-items-center text-primary-foreground text-2xl font-bold mx-auto mb-3">
                 {(myProfile?.display_name || "U").charAt(0).toUpperCase()}
               </div>
             )}
-            <h4 className="text-lg font-semibold">{myProfile?.display_name || "Anonymous"}</h4>
-            {myProfile?.bio && <p className="text-muted-foreground">{myProfile.bio}</p>}
+            <h4 className="text-lg font-semibold font-display">{myProfile?.display_name || "Anonymous"}</h4>
+            {myProfile?.bio && <p className="text-muted-foreground text-sm">{myProfile.bio}</p>}
             {myProfile?.status_message && (
-              <Badge variant="outline" className="mt-2">{myProfile.status_message}</Badge>
+              <Badge variant="outline" className="mt-2 rounded-full">{myProfile.status_message}</Badge>
             )}
           </div>
 
           <div className="space-y-4 mt-4">
             <div>
-              <h5 className="font-semibold mb-2">Personality Traits</h5>
+              <h5 className="font-semibold font-display mb-2 text-sm">Personality Traits</h5>
               <div className="flex flex-wrap gap-2">
                 {topTraits.length ? (
                   topTraits.map((t) => (
-                    <Badge key={t} className="rounded-full" variant="outline">
+                    <Badge key={t} className="rounded-full bg-accent text-accent-foreground border-0 text-xs">
                       {t}
                     </Badge>
                   ))
@@ -423,7 +480,7 @@ const Index = () => {
               </div>
             </div>
             <Link to="/profile">
-              <Button variant="outline" className="w-full mt-2">Edit Profile</Button>
+              <Button variant="outline" className="w-full mt-2 rounded-xl">Edit Profile</Button>
             </Link>
           </div>
         </DialogContent>
