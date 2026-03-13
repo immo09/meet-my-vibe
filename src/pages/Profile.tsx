@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Camera, Loader2, ArrowLeft } from "lucide-react";
+import { Camera, Loader2, ArrowLeft, Shield, Star, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppNavigation from "@/components/AppNavigation";
 
@@ -27,6 +28,10 @@ const Profile: React.FC = () => {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
+  const [verified, setVerified] = useState(false);
+  const [reputationScore, setReputationScore] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [ghostingStrikes, setGhostingStrikes] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -36,7 +41,7 @@ const Profile: React.FC = () => {
 
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, username, bio, avatar_url, status_message")
+        .select("display_name, username, bio, avatar_url, status_message, verified, reputation_score, rating_count, ghosting_strikes")
         .eq("id", user.id)
         .single();
 
@@ -46,6 +51,10 @@ const Profile: React.FC = () => {
         setBio(data.bio ?? "");
         setAvatarUrl(data.avatar_url);
         setStatusMessage(data.status_message ?? "");
+        setVerified(data.verified);
+        setReputationScore(data.reputation_score);
+        setRatingCount(data.rating_count);
+        setGhostingStrikes(data.ghosting_strikes);
       }
       setLoading(false);
     })();
@@ -78,7 +87,6 @@ const Profile: React.FC = () => {
         .from("avatars")
         .getPublicUrl(filePath);
 
-      // Append cache-buster so the browser fetches the new image
       const freshUrl = `${publicUrl}?t=${Date.now()}`;
       setAvatarUrl(freshUrl);
 
@@ -120,76 +128,115 @@ const Profile: React.FC = () => {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
+      <main className="min-h-screen bg-gradient-subtle flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-gradient-subtle flex flex-col">
       <Helmet>
-        <title>Edit Profile</title>
+        <title>Edit Profile — Hangz</title>
         <meta name="description" content="Edit your profile, upload an avatar, and update your bio." />
       </Helmet>
 
-      <div className="max-w-lg mx-auto p-6">
-        <Button variant="ghost" size="sm" className="mb-4" onClick={() => navigate(-1)}>
+      {/* Hero header */}
+      <div className="bg-gradient-primary pt-12 pb-20 px-4 relative">
+        <Button variant="ghost" size="sm" className="absolute top-4 left-4 text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
+        <h1 className="text-2xl font-bold font-display text-primary-foreground text-center">Your Profile</h1>
+      </div>
 
-        <h1 className="text-3xl font-bold mb-6">Edit Profile</h1>
-
-        <Card>
-          <CardContent className="p-6 space-y-6">
-            {/* Avatar */}
-            <div className="flex flex-col items-center gap-3">
-              <button
-                type="button"
-                className="relative group rounded-full overflow-hidden w-24 h-24 bg-muted border-2 border-border focus:outline-none focus:ring-2 focus:ring-ring"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full grid place-items-center text-3xl font-bold text-muted-foreground">
-                    {(displayName || "U").charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity grid place-items-center">
-                  {uploading ? (
-                    <Loader2 className="h-6 w-6 animate-spin text-background" />
-                  ) : (
-                    <Camera className="h-6 w-6 text-background" />
-                  )}
+      <div className="max-w-lg mx-auto w-full px-4 -mt-14 pb-24 space-y-4">
+        {/* Avatar card */}
+        <Card className="border-0 shadow-card rounded-2xl overflow-visible">
+          <CardContent className="p-6 flex flex-col items-center -mt-10">
+            <button
+              type="button"
+              className="relative group rounded-2xl overflow-hidden w-24 h-24 bg-muted border-4 border-card shadow-elegant focus:outline-none focus:ring-2 focus:ring-ring"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-primary grid place-items-center text-3xl font-bold text-primary-foreground">
+                  {(displayName || "U").charAt(0).toUpperCase()}
                 </div>
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarUpload}
-              />
-              <p className="text-sm text-muted-foreground">Click to upload photo</p>
+              )}
+              <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity grid place-items-center">
+                {uploading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-primary-foreground" />
+                ) : (
+                  <Camera className="h-6 w-6 text-primary-foreground" />
+                )}
+              </div>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarUpload}
+            />
+            <p className="text-xs text-muted-foreground mt-2">Tap to change photo</p>
+
+            {/* Stats row */}
+            <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border w-full justify-center">
+              <div className="text-center">
+                <div className="flex items-center gap-1 justify-center text-primary">
+                  <Star className="h-4 w-4 fill-current" />
+                  <span className="text-lg font-bold font-display">{reputationScore.toFixed(1)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{ratingCount} ratings</p>
+              </div>
+              <div className="w-px h-8 bg-border" />
+              <div className="text-center">
+                {verified ? (
+                  <Badge className="rounded-full bg-accent text-accent-foreground border-0 gap-1">
+                    <Shield className="h-3 w-3" /> Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="rounded-full gap-1 text-muted-foreground">
+                    Not verified
+                  </Badge>
+                )}
+              </div>
+              {ghostingStrikes > 0 && (
+                <>
+                  <div className="w-px h-8 bg-border" />
+                  <div className="text-center">
+                    <div className="flex items-center gap-1 justify-center text-destructive">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      <span className="text-sm font-semibold">{ghostingStrikes}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">strikes</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Form card */}
+        <Card className="border-0 shadow-card rounded-2xl">
+          <CardContent className="p-6 space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="displayName" className="text-xs font-medium">Display name</Label>
+              <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Alex" className="rounded-xl" />
             </div>
 
-            {/* Fields */}
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Display name</Label>
-              <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Alex" />
+            <div className="space-y-1.5">
+              <Label htmlFor="username" className="text-xs font-medium">Username</Label>
+              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="alex123" className="rounded-xl" />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="alex123" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="status" className="text-xs font-medium">Status</Label>
               <Select value={statusMessage} onValueChange={setStatusMessage}>
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xl">
                   <SelectValue placeholder="Set your status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -201,17 +248,18 @@ const Profile: React.FC = () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell people about yourself…" rows={3} />
+            <div className="space-y-1.5">
+              <Label htmlFor="bio" className="text-xs font-medium">Bio</Label>
+              <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell people about yourself…" rows={3} className="rounded-xl" />
             </div>
 
-            <Button className="w-full" onClick={handleSave} disabled={saving}>
+            <Button className="w-full rounded-xl" onClick={handleSave} disabled={saving}>
               {saving ? "Saving…" : "Save profile"}
             </Button>
           </CardContent>
         </Card>
       </div>
+
       <AppNavigation />
     </main>
   );

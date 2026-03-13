@@ -7,7 +7,7 @@ import ChatView from "@/components/chat/ChatView";
 import NewConversationDialog from "@/components/chat/NewConversationDialog";
 import AppNavigation from "@/components/AppNavigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, MessageCircle } from "lucide-react";
 import PresenceIndicator from "@/components/PresenceIndicator";
 
 export interface Conversation {
@@ -38,7 +38,6 @@ const Chat: React.FC = () => {
     if (!userId) return;
     setLoading(true);
 
-    // Get conversations the user is a member of
     const { data: memberRows } = await supabase
       .from("conversation_members")
       .select("conversation_id")
@@ -64,7 +63,6 @@ const Chat: React.FC = () => {
       return;
     }
 
-    // Fetch members + profiles for each conversation
     const { data: allMembers } = await supabase
       .from("conversation_members")
       .select("conversation_id, user_id")
@@ -78,7 +76,6 @@ const Chat: React.FC = () => {
 
     const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
 
-    // Fetch last message per conversation
     const enriched: Conversation[] = [];
     for (const c of convos) {
       const members = (allMembers ?? [])
@@ -116,18 +113,23 @@ const Chat: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Helmet>
-        <title>Messages — Chat with Nearby People</title>
+        <title>Messages — Hangz</title>
         <meta name="description" content="Chat with people you've met nearby." />
       </Helmet>
 
       <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
         {!activeConvoId ? (
           <>
-            <header className="p-4 flex items-center justify-between border-b">
-              <h1 className="text-2xl font-bold">Messages</h1>
-              <Button size="icon" variant="outline" onClick={() => setNewDialogOpen(true)}>
-                <Plus className="h-5 w-5" />
-              </Button>
+            <header className="glass border-b sticky top-0 z-40">
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold font-display text-gradient">Messages</h1>
+                  <p className="text-xs text-muted-foreground">{conversations.length} conversation{conversations.length !== 1 ? "s" : ""}</p>
+                </div>
+                <Button size="icon" variant="outline" onClick={() => setNewDialogOpen(true)} className="rounded-full h-10 w-10">
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </div>
             </header>
             <ConversationList
               conversations={conversations}
@@ -138,23 +140,38 @@ const Chat: React.FC = () => {
           </>
         ) : (
           <>
-            <header className="p-4 flex items-center gap-3 border-b">
-              <Button size="icon" variant="ghost" onClick={() => setActiveConvoId(null)}>
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold truncate">
-                  {activeConvo?.type === "group"
-                    ? activeConvo.name || "Group Chat"
-                    : activeConvo?.members
-                        .filter((m) => m.user_id !== userId)
-                        .map((m) => m.display_name || "Anonymous")
-                        .join(", ") || "Chat"}
-                </h2>
-                {activeConvo?.type === "direct" && (() => {
-                  const other = activeConvo.members.find((m) => m.user_id !== userId);
-                  return other ? <PresenceIndicator userId={other.user_id} size="sm" lastSeenAt={other.last_seen_at} statusMessage={other.status_message} showLastSeen /> : null;
-                })()}
+            <header className="glass border-b sticky top-0 z-40">
+              <div className="px-4 py-3 flex items-center gap-3">
+                <Button size="icon" variant="ghost" onClick={() => setActiveConvoId(null)} className="rounded-full shrink-0">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  {/* Avatar */}
+                  {activeConvo?.type === "direct" && (() => {
+                    const other = activeConvo.members.find((m) => m.user_id !== userId);
+                    return other?.avatar_url ? (
+                      <img src={other.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-gradient-primary text-primary-foreground grid place-items-center text-sm font-bold shrink-0">
+                        {(other?.display_name || "A").charAt(0).toUpperCase()}
+                      </div>
+                    );
+                  })()}
+                  <div className="min-w-0">
+                    <h2 className="text-base font-semibold font-display truncate">
+                      {activeConvo?.type === "group"
+                        ? activeConvo.name || "Group Chat"
+                        : activeConvo?.members
+                            .filter((m) => m.user_id !== userId)
+                            .map((m) => m.display_name || "Anonymous")
+                            .join(", ") || "Chat"}
+                    </h2>
+                    {activeConvo?.type === "direct" && (() => {
+                      const other = activeConvo.members.find((m) => m.user_id !== userId);
+                      return other ? <PresenceIndicator userId={other.user_id} size="sm" lastSeenAt={other.last_seen_at} statusMessage={other.status_message} showLastSeen /> : null;
+                    })()}
+                  </div>
+                </div>
               </div>
             </header>
             <ChatView conversationId={activeConvoId} userId={userId!} />

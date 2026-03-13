@@ -73,34 +73,34 @@ const RateUserDialog: React.FC<RateUserDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm rounded-2xl border-0 shadow-card">
         <DialogHeader>
-          <DialogTitle>Rate {rateeName}</DialogTitle>
+          <DialogTitle className="font-display">Rate {rateeName}</DialogTitle>
           <DialogDescription>How was your hangout experience?</DialogDescription>
         </DialogHeader>
 
         {/* Star rating */}
-        <div className="flex justify-center gap-1 py-4">
+        <div className="flex justify-center gap-2 py-4">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
               key={star}
               type="button"
-              className="focus:outline-none transition-transform hover:scale-110"
+              className="focus:outline-none transition-transform hover:scale-125 active:scale-95"
               onMouseEnter={() => setHover(star)}
               onMouseLeave={() => setHover(0)}
               onClick={() => setScore(star)}
             >
               <Star
-                className={`h-8 w-8 transition-colors ${
+                className={`h-9 w-9 transition-colors ${
                   star <= (hover || score)
                     ? "fill-primary text-primary"
-                    : "text-muted-foreground/30"
+                    : "text-border"
                 }`}
               />
             </button>
           ))}
         </div>
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-muted-foreground font-medium">
           {score === 0
             ? "Tap a star"
             : score <= 2
@@ -112,20 +112,19 @@ const RateUserDialog: React.FC<RateUserDialogProps> = ({
             : "Amazing experience!"}
         </p>
 
-        {/* Comment */}
         <Textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Leave a comment (optional)…"
           rows={3}
-          className="mt-2"
+          className="mt-2 rounded-xl"
         />
 
         <div className="flex gap-3 mt-4">
-          <Button variant="secondary" className="flex-1" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" className="flex-1 rounded-xl" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button className="flex-1" onClick={handleSubmit} disabled={loading || score === 0}>
+          <Button className="flex-1 rounded-xl" onClick={handleSubmit} disabled={loading || score === 0}>
             {loading ? "Submitting…" : "Submit Rating"}
           </Button>
         </div>
