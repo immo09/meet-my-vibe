@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2, MapPin, Navigation } from "lucide-react";
 import { useGeolocation } from "@/hooks/use-geolocation";
 
 const LocationShare: React.FC = () => {
@@ -20,24 +20,28 @@ const LocationShare: React.FC = () => {
   };
 
   return (
-    <Card>
-      <CardContent className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <MapPin className="h-5 w-5 text-primary" />
-          <div>
-            <div className="font-medium">Share your location</div>
-            <p className="text-sm text-muted-foreground">Enable to discover people nearby.</p>
+    <Card className={`border-0 rounded-2xl overflow-hidden ${sharing ? "shadow-card" : "shadow-card"}`}>
+      <CardContent className="p-0">
+        <div className={`p-4 flex items-center justify-between gap-3 ${sharing ? "bg-accent/50" : ""}`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl grid place-items-center ${sharing ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
+              {sharing ? <Navigation className="h-5 w-5" /> : <MapPin className="h-5 w-5" />}
+            </div>
+            <div>
+              <div className="font-medium font-display text-sm">{sharing ? "Location active" : "Share your location"}</div>
+              <p className="text-xs text-muted-foreground">{sharing ? "People can see you nearby" : "Enable to discover people nearby"}</p>
+            </div>
           </div>
+          {sharing ? (
+            <Button variant="outline" size="sm" onClick={onStop} disabled={loading} className="rounded-xl">
+              {loading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />} Stop
+            </Button>
+          ) : (
+            <Button size="sm" onClick={onShare} disabled={loading} className="rounded-xl">
+              {loading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />} Enable
+            </Button>
+          )}
         </div>
-        {sharing ? (
-          <Button variant="secondary" onClick={onStop} disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Stop sharing
-          </Button>
-        ) : (
-          <Button onClick={onShare} disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Share location
-          </Button>
-        )}
       </CardContent>
     </Card>
   );

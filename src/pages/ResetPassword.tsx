@@ -17,14 +17,12 @@ const ResetPassword: React.FC = () => {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Listen for the PASSWORD_RECOVERY event from the magic link
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setReady(true);
       }
     });
 
-    // Also check hash for type=recovery (handles page refresh)
     const hash = window.location.hash;
     if (hash.includes("type=recovery")) {
       setReady(true);
@@ -57,31 +55,34 @@ const ResetPassword: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-gradient-subtle flex items-center justify-center p-6">
       <Helmet>
-        <title>Reset Password</title>
-        <meta name="description" content="Set a new password for your account." />
+        <title>Reset Password — Hangz</title>
+        <meta name="description" content="Set a new password for your Hangz account." />
       </Helmet>
-      <div className="max-w-md mx-auto p-6">
-        <h1 className="text-3xl font-bold text-center mb-2">Reset Password</h1>
-        <p className="text-center text-muted-foreground mb-6">Enter your new password below.</p>
-        <Card>
+      <div className="w-full max-w-sm animate-fade-up">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold font-display text-gradient mb-2">Hangz</h1>
+          <p className="text-muted-foreground text-sm">Set your new password</p>
+        </div>
+
+        <Card className="border-0 shadow-card rounded-2xl">
           <CardContent className="p-6">
             {!ready ? (
-              <p className="text-center text-muted-foreground">
+              <p className="text-center text-muted-foreground py-4">
                 Verifying your reset link… If nothing happens, the link may have expired.
               </p>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="password">New password</Label>
-                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-xs">New password</Label>
+                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-xl" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm">Confirm password</Label>
-                  <Input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+                <div className="space-y-1.5">
+                  <Label htmlFor="confirm" className="text-xs">Confirm password</Label>
+                  <Input id="confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required className="rounded-xl" />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full rounded-xl" disabled={loading}>
                   {loading ? "Updating…" : "Set new password"}
                 </Button>
               </form>

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -33,11 +33,13 @@ const NewConversationDialog: React.FC<Props> = ({ open, onOpenChange, userId, on
   const [groupName, setGroupName] = useState("");
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!open || !userId) return;
     setSelected([]);
     setGroupName("");
+    setSearch("");
     (async () => {
       setLoading(true);
       const { data } = await supabase
@@ -56,6 +58,10 @@ const NewConversationDialog: React.FC<Props> = ({ open, onOpenChange, userId, on
     );
   };
 
+  const filtered = profiles.filter((p) =>
+    !search.trim() || (p.display_name?.toLowerCase().includes(search.toLowerCase()))
+  );
+
   const handleCreate = async () => {
     if (!userId || selected.length === 0) return;
     setCreating(true);
@@ -64,7 +70,6 @@ const NewConversationDialog: React.FC<Props> = ({ open, onOpenChange, userId, on
       const isGroup = selected.length > 1;
       const type = isGroup ? "group" : "direct";
 
-      // For direct messages, check if conversation already exists
       if (!isGroup) {
         const { data: existingMembers } = await supabase
           .from("conversation_members")
@@ -80,7 +85,6 @@ const NewConversationDialog: React.FC<Props> = ({ open, onOpenChange, userId, on
             .in("conversation_id", convoIds);
 
           if (otherMembers && otherMembers.length > 0) {
-            // Check if any of these are direct conversations
             const { data: directConvos } = await supabase
               .from("conversations")
               .select("id")
@@ -96,7 +100,6 @@ const NewConversationDialog: React.FC<Props> = ({ open, onOpenChange, userId, on
         }
       }
 
-      // Create conversation
       const { data: convo, error } = await supabase
         .from("conversations")
         .insert({
@@ -109,7 +112,6 @@ const NewConversationDialog: React.FC<Props> = ({ open, onOpenChange, userId, on
 
       if (error || !convo) throw error || new Error("Failed to create conversation");
 
-      // Add members (creator + selected)
       const members = [userId, ...selected].map((uid) => ({
         conversation_id: convo.id,
         user_id: uid,
@@ -131,51 +133,65 @@ const NewConversationDialog: React.FC<Props> = ({ open, onOpenChange, userId, on
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm rounded-2xl border-0 shadow-card">
         <DialogHeader>
-          <DialogTitle>New Conversation</DialogTitle>
+          <DialogTitle className="font-display">New Conversation</DialogTitle>
           <DialogDescription>Select people to chat with</DialogDescription>
         </DialogHeader>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search people…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 rounded-xl"
+          />
+        </div>
 
         {selected.length > 1 && (
           <Input
             placeholder="Group name (optional)"
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
+            className="rounded-xl"
           />
         )}
 
-        <div className="max-h-64 overflow-y-auto space-y-1">
+        <div className="max-h-64 overflow-y-auto space-y-0.5">
           {loading ? (
-            <div className="flex justify-center p-4">
+            <div className="flex justify-center p-6">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          ) : profiles.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No users found</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">No users found</p>
           ) : (
-            profiles.map((p) => (
+            filtered.map((p) => (
               <label
                 key={p.id}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                  selected.includes(p.id) ? "bg-accent" : "hover:bg-muted/50"
+                }`}
               >
                 <Checkbox
                   checked={selected.includes(p.id)}
                   onCheckedChange={() => toggleUser(p.id)}
                 />
                 {p.avatar_url ? (
-                  <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                  <img src={p.avatar_url} alt="" className="w-9 h-9 rounded-xl object-cover" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground grid place-items-center text-sm font-bold">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-primary text-primary-foreground grid place-items-center text-sm font-bold">
                     {(p.display_name || "A").charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="font-medium">{p.display_name || "Anonymous"}</span>
+                <span className="font-medium text-sm">{p.display_name || "Anonymous"}</span>
               </label>
             ))
           )}
         </div>
 
-        <Button onClick={handleCreate} disabled={creating || selected.length === 0}>
+        <Button onClick={handleCreate} disabled={creating || selected.length === 0} className="rounded-xl">
           {creating ? "Creating…" : selected.length > 1 ? "Create Group" : "Start Chat"}
         </Button>
       </DialogContent>
