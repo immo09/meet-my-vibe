@@ -82,24 +82,8 @@ const Nearby: React.FC = () => {
     }
   }, [currentPos]);
 
-  const enriched = useMemo(() => {
-    if (!currentPos) return profiles.map((p) => ({ ...p, distanceKm: null as number | null }));
-    const { latitude, longitude } = currentPos.coords;
-    return profiles.map((p) => ({
-      ...p,
-      distanceKm: p.lat && p.lng ? haversineDistanceKm(latitude, longitude, p.lat, p.lng) : null,
-    }));
-  }, [profiles, currentPos]);
-
-  const sorted = useMemo(() => {
-    return [...enriched]
-      .filter((p) => (me ? p.id !== me.id : true))
-      .sort((a, b) => {
-        if (a.distanceKm == null) return 1;
-        if (b.distanceKm == null) return -1;
-        return a.distanceKm - b.distanceKm;
-      });
-  }, [enriched, me]);
+  // Profiles are already sorted by distance and exclude current user from the RPC
+  const sorted = profiles;
 
   const canonical = typeof window !== "undefined" ? window.location.href : "/nearby";
 
