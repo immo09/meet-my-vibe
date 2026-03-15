@@ -12,15 +12,19 @@ import AppNavigation from "@/components/AppNavigation";
 import PresenceIndicator from "@/components/PresenceIndicator";
 import { MapPin, Star, Users } from "lucide-react";
 
-interface Profile {
+interface NearbyProfile {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
   verified: boolean;
   reputation_score: number;
   rating_count: number;
-  lat: number | null;
-  lng: number | null;
+  distance_km: number | null;
+  bio: string | null;
+  status_message: string | null;
+  ghosting_strikes: number;
+  last_seen_at: string | null;
+  username: string | null;
 }
 
 const Nearby: React.FC = () => {
