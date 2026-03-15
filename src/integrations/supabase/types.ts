@@ -398,6 +398,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_nearby_profiles: {
+        Args: { _lat: number; _lng: number; _radius_km?: number }
+        Returns: {
+          avatar_url: string
+          bio: string
+          display_name: string
+          distance_km: number
+          ghosting_strikes: number
+          id: string
+          last_seen_at: string
+          rating_count: number
+          reputation_score: number
+          status_message: string
+          username: string
+          verified: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

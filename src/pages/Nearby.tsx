@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDistance, haversineDistanceKm } from "@/lib/geo";
+import { formatDistance } from "@/lib/geo";
 import LocationShare from "@/components/location/LocationShare";
 import RateUserDialog from "@/components/RateUserDialog";
 import { useStartDm } from "@/hooks/use-start-dm";
@@ -12,21 +12,25 @@ import AppNavigation from "@/components/AppNavigation";
 import PresenceIndicator from "@/components/PresenceIndicator";
 import { MapPin, Star, Users } from "lucide-react";
 
-interface Profile {
+interface NearbyProfile {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
   verified: boolean;
   reputation_score: number;
   rating_count: number;
-  lat: number | null;
-  lng: number | null;
+  distance_km: number | null;
+  bio: string | null;
+  status_message: string | null;
+  ghosting_strikes: number;
+  last_seen_at: string | null;
+  username: string | null;
 }
 
 const Nearby: React.FC = () => {
   const [me, setMe] = useState<{ id: string } | null>(null);
   const [currentPos, setCurrentPos] = useState<GeolocationPosition | null>(null);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState<NearbyProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [rateTarget, setRateTarget] = useState<{ id: string; name: string } | null>(null);
   const { startDm, starting } = useStartDm();
@@ -56,38 +60,30 @@ const Nearby: React.FC = () => {
     })();
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url, verified, reputation_score, rating_count, lat, lng")
-        .not("lat", "is", null)
-        .not("lng", "is", null)
-        .limit(100);
-      if (!error) setProfiles((data as any) ?? []);
-      setLoading(false);
-    })();
-  }, []);
-
-  const enriched = useMemo(() => {
-    if (!currentPos) return profiles.map((p) => ({ ...p, distanceKm: null as number | null }));
-    const { latitude, longitude } = currentPos.coords;
-    return profiles.map((p) => ({
-      ...p,
-      distanceKm: p.lat && p.lng ? haversineDistanceKm(latitude, longitude, p.lat, p.lng) : null,
-    }));
-  }, [profiles, currentPos]);
-
-  const sorted = useMemo(() => {
-    return [...enriched]
-      .filter((p) => (me ? p.id !== me.id : true))
-      .sort((a, b) => {
-        if (a.distanceKm == null) return 1;
-        if (b.distanceKm == null) return -1;
-        return a.distanceKm - b.distanceKm;
+  // Fetch nearby profiles using secure RPC (hides exact coordinates)
+  const fetchNearby = async (lat?: number, lng?: number) => {
+    setLoading(true);
+    if (lat != null && lng != null) {
+      const { data, error } = await supabase.rpc("get_nearby_profiles", {
+        _lat: lat,
+        _lng: lng,
+        _radius_km: 50,
       });
-  }, [enriched, me]);
+      if (!error) setProfiles((data as any) ?? []);
+    } else {
+      setProfiles([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (currentPos) {
+      fetchNearby(currentPos.coords.latitude, currentPos.coords.longitude);
+    }
+  }, [currentPos]);
+
+  // Profiles are already sorted by distance and exclude current user from the RPC
+  const sorted = profiles;
 
   const canonical = typeof window !== "undefined" ? window.location.href : "/nearby";
 
@@ -170,7 +166,7 @@ const Nearby: React.FC = () => {
                     <div className="inline-flex items-center gap-1 bg-accent rounded-full px-2.5 py-1">
                       <MapPin className="h-3 w-3 text-accent-foreground" />
                       <span className="text-xs font-medium text-accent-foreground">
-                        {p.distanceKm == null ? "—" : formatDistance(p.distanceKm)}
+                        {p.distance_km == null ? "—" : formatDistance(p.distance_km)}
                       </span>
                     </div>
                   </div>
@@ -213,15 +209,9 @@ const Nearby: React.FC = () => {
         rateeId={rateTarget?.id ?? ""}
         rateeName={rateTarget?.name ?? ""}
         onRated={() => {
-          (async () => {
-            const { data } = await supabase
-              .from("profiles")
-              .select("id, display_name, avatar_url, verified, reputation_score, rating_count, lat, lng")
-              .not("lat", "is", null)
-              .not("lng", "is", null)
-              .limit(100);
-            if (data) setProfiles(data as any);
-          })();
+          if (currentPos) {
+            fetchNearby(currentPos.coords.latitude, currentPos.coords.longitude);
+          }
         }}
       />
     </main>
