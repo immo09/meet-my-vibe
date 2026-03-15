@@ -209,15 +209,9 @@ const Nearby: React.FC = () => {
         rateeId={rateTarget?.id ?? ""}
         rateeName={rateTarget?.name ?? ""}
         onRated={() => {
-          (async () => {
-            const { data } = await supabase
-              .from("profiles")
-              .select("id, display_name, avatar_url, verified, reputation_score, rating_count, lat, lng")
-              .not("lat", "is", null)
-              .not("lng", "is", null)
-              .limit(100);
-            if (data) setProfiles(data as any);
-          })();
+          if (currentPos) {
+            fetchNearby(currentPos.coords.latitude, currentPos.coords.longitude);
+          }
         }}
       />
     </main>
