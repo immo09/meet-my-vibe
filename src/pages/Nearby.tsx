@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDistance, haversineDistanceKm } from "@/lib/geo";
+import { formatDistance } from "@/lib/geo";
 import LocationShare from "@/components/location/LocationShare";
 import RateUserDialog from "@/components/RateUserDialog";
 import { useStartDm } from "@/hooks/use-start-dm";
