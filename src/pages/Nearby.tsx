@@ -30,7 +30,7 @@ interface NearbyProfile {
 const Nearby: React.FC = () => {
   const [me, setMe] = useState<{ id: string } | null>(null);
   const [currentPos, setCurrentPos] = useState<GeolocationPosition | null>(null);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState<NearbyProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [rateTarget, setRateTarget] = useState<{ id: string; name: string } | null>(null);
   const { startDm, starting } = useStartDm();
