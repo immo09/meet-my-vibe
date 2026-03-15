@@ -60,19 +60,27 @@ const Nearby: React.FC = () => {
     })();
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url, verified, reputation_score, rating_count, lat, lng")
-        .not("lat", "is", null)
-        .not("lng", "is", null)
-        .limit(100);
+  // Fetch nearby profiles using secure RPC (hides exact coordinates)
+  const fetchNearby = async (lat?: number, lng?: number) => {
+    setLoading(true);
+    if (lat != null && lng != null) {
+      const { data, error } = await supabase.rpc("get_nearby_profiles", {
+        _lat: lat,
+        _lng: lng,
+        _radius_km: 50,
+      });
       if (!error) setProfiles((data as any) ?? []);
-      setLoading(false);
-    })();
-  }, []);
+    } else {
+      setProfiles([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (currentPos) {
+      fetchNearby(currentPos.coords.latitude, currentPos.coords.longitude);
+    }
+  }, [currentPos]);
 
   const enriched = useMemo(() => {
     if (!currentPos) return profiles.map((p) => ({ ...p, distanceKm: null as number | null }));
