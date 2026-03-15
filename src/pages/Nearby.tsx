@@ -166,7 +166,7 @@ const Nearby: React.FC = () => {
                     <div className="inline-flex items-center gap-1 bg-accent rounded-full px-2.5 py-1">
                       <MapPin className="h-3 w-3 text-accent-foreground" />
                       <span className="text-xs font-medium text-accent-foreground">
-                        {p.distanceKm == null ? "—" : formatDistance(p.distanceKm)}
+                        {p.distance_km == null ? "—" : formatDistance(p.distance_km)}
                       </span>
                     </div>
                   </div>
