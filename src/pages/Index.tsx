@@ -145,12 +145,13 @@ const Index = () => {
 
       const [profilesRes, myRes] = await Promise.all([
         supabase
+          .rpc("list_public_profiles", { _exclude_user_id: user.id, _limit: 20 }),
+        supabase
           .from("profiles")
-          .select("id, display_name, bio, avatar_url, verified, reputation_score, rating_count")
-          .neq("id", user.id)
-          .order("verified", { ascending: false })
-          .order("reputation_score", { ascending: false })
-          .limit(20),
+          .select("display_name, avatar_url, bio, status_message")
+          .eq("id", user.id)
+          .single(),
+      ]);
         supabase
           .from("profiles")
           .select("display_name, avatar_url, bio, status_message")
