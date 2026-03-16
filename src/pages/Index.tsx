@@ -151,13 +151,6 @@ const Index = () => {
           .select("display_name, avatar_url, bio, status_message")
           .eq("id", user.id)
           .single(),
-      ]);
-        supabase
-          .from("profiles")
-          .select("display_name, avatar_url, bio, status_message")
-          .eq("id", user.id)
-          .single(),
-      ]);
 
       setLoadingProfiles(false);
       if (!profilesRes.error) setProfiles(profilesRes.data ?? []);
