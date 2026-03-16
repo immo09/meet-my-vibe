@@ -415,6 +415,22 @@ export type Database = {
           verified: boolean
         }[]
       }
+      get_public_profiles: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          bio: string
+          display_name: string
+          ghosting_strikes: number
+          id: string
+          last_seen_at: string
+          rating_count: number
+          reputation_score: number
+          status_message: string
+          username: string
+          verified: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -425,6 +441,22 @@ export type Database = {
       is_conversation_member: {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
+      }
+      list_public_profiles: {
+        Args: { _exclude_user_id?: string; _limit?: number }
+        Returns: {
+          avatar_url: string
+          bio: string
+          display_name: string
+          ghosting_strikes: number
+          id: string
+          last_seen_at: string
+          rating_count: number
+          reputation_score: number
+          status_message: string
+          username: string
+          verified: boolean
+        }[]
       }
       recalc_profile_reputation: {
         Args: { target_user: string }

@@ -43,10 +43,7 @@ const NewConversationDialog: React.FC<Props> = ({ open, onOpenChange, userId, on
     (async () => {
       setLoading(true);
       const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url")
-        .neq("id", userId)
-        .limit(50);
+        .rpc("list_public_profiles", { _exclude_user_id: userId, _limit: 50 });
       setProfiles(data ?? []);
       setLoading(false);
     })();
