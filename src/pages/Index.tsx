@@ -497,12 +497,7 @@ const Index = () => {
         onRated={() => {
           (async () => {
             const { data } = await supabase
-              .from("profiles")
-              .select("id, display_name, bio, avatar_url, verified, reputation_score, rating_count")
-              .neq("id", userId ?? "")
-              .order("verified", { ascending: false })
-              .order("reputation_score", { ascending: false })
-              .limit(20);
+              .rpc("list_public_profiles", { _exclude_user_id: userId ?? undefined, _limit: 20 });
             if (data) setProfiles(data);
           })();
         }}
