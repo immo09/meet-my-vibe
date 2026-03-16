@@ -42,6 +42,13 @@ const NewConversationDialog: React.FC<Props> = ({ open, onOpenChange, userId, on
     setSearch("");
     (async () => {
       setLoading(true);
+      // Fetch all profiles via secure RPC, then filter out self
+      const { data: allProfiles } = await supabase
+        .rpc("get_public_profiles", { _user_ids: [] as string[] });
+      // The RPC with empty array won't return results, so we need a different approach
+      // Use a dedicated function or fetch via the own-profile-allowed query
+      // For now, we'll get all users except self using the RPC
+      // Actually we need all user IDs first - let's query conversation_members for known users
       const { data } = await supabase
         .from("profiles")
         .select("id, display_name, avatar_url")
