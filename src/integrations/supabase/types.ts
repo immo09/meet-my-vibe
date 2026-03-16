@@ -395,7 +395,48 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          display_name: string | null
+          ghosting_strikes: number | null
+          id: string | null
+          last_seen_at: string | null
+          rating_count: number | null
+          reputation_score: number | null
+          status_message: string | null
+          username: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          display_name?: string | null
+          ghosting_strikes?: number | null
+          id?: string | null
+          last_seen_at?: string | null
+          rating_count?: number | null
+          reputation_score?: number | null
+          status_message?: string | null
+          username?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          display_name?: string | null
+          ghosting_strikes?: number | null
+          id?: string | null
+          last_seen_at?: string | null
+          rating_count?: number | null
+          reputation_score?: number | null
+          status_message?: string | null
+          username?: string | null
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_nearby_profiles: {
