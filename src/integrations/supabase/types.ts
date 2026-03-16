@@ -395,48 +395,7 @@ export type Database = {
       }
     }
     Views: {
-      public_profiles: {
-        Row: {
-          avatar_url: string | null
-          bio: string | null
-          display_name: string | null
-          ghosting_strikes: number | null
-          id: string | null
-          last_seen_at: string | null
-          rating_count: number | null
-          reputation_score: number | null
-          status_message: string | null
-          username: string | null
-          verified: boolean | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          display_name?: string | null
-          ghosting_strikes?: number | null
-          id?: string | null
-          last_seen_at?: string | null
-          rating_count?: number | null
-          reputation_score?: number | null
-          status_message?: string | null
-          username?: string | null
-          verified?: boolean | null
-        }
-        Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          display_name?: string | null
-          ghosting_strikes?: number | null
-          id?: string | null
-          last_seen_at?: string | null
-          rating_count?: number | null
-          reputation_score?: number | null
-          status_message?: string | null
-          username?: string | null
-          verified?: boolean | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_nearby_profiles: {
@@ -446,6 +405,22 @@ export type Database = {
           bio: string
           display_name: string
           distance_km: number
+          ghosting_strikes: number
+          id: string
+          last_seen_at: string
+          rating_count: number
+          reputation_score: number
+          status_message: string
+          username: string
+          verified: boolean
+        }[]
+      }
+      get_public_profiles: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          bio: string
+          display_name: string
           ghosting_strikes: number
           id: string
           last_seen_at: string
