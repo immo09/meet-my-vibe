@@ -45,9 +45,39 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [searchIndex, setSearchIndex] = useState(0);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  // Resolve signed URLs for attachments stored in chat-attachments bucket
+  useEffect(() => {
+    const msgsWithAttachments = messages.filter(
+      (m) => m.attachment_url && !signedUrls[m.id]
+    );
+    if (msgsWithAttachments.length === 0) return;
+
+    const resolve = async () => {
+      const newUrls: Record<string, string> = {};
+      for (const msg of msgsWithAttachments) {
+        const url = msg.attachment_url!;
+        // Extract storage path from URL (after /object/public/chat-attachments/ or /object/sign/chat-attachments/)
+        const bucketMatch = url.match(/chat-attachments\/(.+?)(?:\?|$)/);
+        if (bucketMatch) {
+          const path = decodeURIComponent(bucketMatch[1]);
+          const { data } = await supabase.storage
+            .from("chat-attachments")
+            .createSignedUrl(path, 60 * 60);
+          if (data?.signedUrl) newUrls[msg.id] = data.signedUrl;
+        } else {
+          // External URL or already signed - use as-is
+          newUrls[msg.id] = url;
+        }
+      }
+      setSignedUrls((prev) => ({ ...prev, ...newUrls }));
+    };
+    resolve();
+  }, [messages]);
 
   // Generate preview for pending file
   useEffect(() => {
@@ -252,11 +282,17 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
       return null;
     }
 
-    const { data: publicUrlData } = supabase.storage
+    // Use signed URL since bucket is private
+    const { data: signedUrlData, error: signError } = await supabase.storage
       .from("chat-attachments")
-      .getPublicUrl(path);
+      .createSignedUrl(path, 60 * 60); // 1 hour TTL
 
-    return { url: publicUrlData.publicUrl, type: file.type };
+    if (signError || !signedUrlData?.signedUrl) {
+      toast.error("Failed to generate file URL");
+      return null;
+    }
+
+    return { url: signedUrlData.signedUrl, type: file.type };
   };
 
   const handleSend = async () => {
@@ -370,12 +406,13 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
 
   const renderAttachment = (msg: Message) => {
     if (!msg.attachment_url) return null;
+    const resolvedUrl = signedUrls[msg.id] || msg.attachment_url;
 
     if (isImageType(msg.attachment_type)) {
       return (
-        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
+        <a href={resolvedUrl} target="_blank" rel="noopener noreferrer" className="block mt-1">
           <img
-            src={msg.attachment_url}
+            src={resolvedUrl}
             alt="Shared image"
             className="max-w-full rounded-lg max-h-60 object-cover"
             loading="lazy"
@@ -385,10 +422,10 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     }
 
     // Generic file
-    const fileName = msg.attachment_url.split("/").pop() || "File";
+    const fileName = msg.attachment_url.split("/").pop()?.split("?")[0] || "File";
     return (
       <a
-        href={msg.attachment_url}
+        href={resolvedUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2 mt-1 p-2 rounded-lg bg-background/20 hover:bg-background/30 transition-colors"
