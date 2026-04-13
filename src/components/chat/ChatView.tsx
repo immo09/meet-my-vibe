@@ -406,12 +406,13 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
 
   const renderAttachment = (msg: Message) => {
     if (!msg.attachment_url) return null;
+    const resolvedUrl = signedUrls[msg.id] || msg.attachment_url;
 
     if (isImageType(msg.attachment_type)) {
       return (
-        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
+        <a href={resolvedUrl} target="_blank" rel="noopener noreferrer" className="block mt-1">
           <img
-            src={msg.attachment_url}
+            src={resolvedUrl}
             alt="Shared image"
             className="max-w-full rounded-lg max-h-60 object-cover"
             loading="lazy"
@@ -421,10 +422,10 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
     }
 
     // Generic file
-    const fileName = msg.attachment_url.split("/").pop() || "File";
+    const fileName = msg.attachment_url.split("/").pop()?.split("?")[0] || "File";
     return (
       <a
-        href={msg.attachment_url}
+        href={resolvedUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2 mt-1 p-2 rounded-lg bg-background/20 hover:bg-background/30 transition-colors"
