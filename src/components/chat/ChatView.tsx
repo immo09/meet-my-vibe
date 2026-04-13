@@ -252,11 +252,17 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
       return null;
     }
 
-    const { data: publicUrlData } = supabase.storage
+    // Use signed URL since bucket is private
+    const { data: signedUrlData, error: signError } = await supabase.storage
       .from("chat-attachments")
-      .getPublicUrl(path);
+      .createSignedUrl(path, 60 * 60); // 1 hour TTL
 
-    return { url: publicUrlData.publicUrl, type: file.type };
+    if (signError || !signedUrlData?.signedUrl) {
+      toast.error("Failed to generate file URL");
+      return null;
+    }
+
+    return { url: signedUrlData.signedUrl, type: file.type };
   };
 
   const handleSend = async () => {
