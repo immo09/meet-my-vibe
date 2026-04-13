@@ -45,9 +45,39 @@ const ChatView: React.FC<Props> = ({ conversationId, userId }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [searchIndex, setSearchIndex] = useState(0);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  // Resolve signed URLs for attachments stored in chat-attachments bucket
+  useEffect(() => {
+    const msgsWithAttachments = messages.filter(
+      (m) => m.attachment_url && !signedUrls[m.id]
+    );
+    if (msgsWithAttachments.length === 0) return;
+
+    const resolve = async () => {
+      const newUrls: Record<string, string> = {};
+      for (const msg of msgsWithAttachments) {
+        const url = msg.attachment_url!;
+        // Extract storage path from URL (after /object/public/chat-attachments/ or /object/sign/chat-attachments/)
+        const bucketMatch = url.match(/chat-attachments\/(.+?)(?:\?|$)/);
+        if (bucketMatch) {
+          const path = decodeURIComponent(bucketMatch[1]);
+          const { data } = await supabase.storage
+            .from("chat-attachments")
+            .createSignedUrl(path, 60 * 60);
+          if (data?.signedUrl) newUrls[msg.id] = data.signedUrl;
+        } else {
+          // External URL or already signed - use as-is
+          newUrls[msg.id] = url;
+        }
+      }
+      setSignedUrls((prev) => ({ ...prev, ...newUrls }));
+    };
+    resolve();
+  }, [messages]);
 
   // Generate preview for pending file
   useEffect(() => {
